@@ -38,6 +38,7 @@ category-name/script-name/
 
 | Category | Script | Description |
 |---|---|---|
+| `automation` | [downloads-organizer](file:///c:/Users/Lenovo/Downloads/Documents/workspace/python%20scripts/automation/downloads-organizer/) | Sorts files in a specified folder into organized category subfolders based on file extensions, patterns, dates, or custom rules. |
 | `tools` | [duplicate-finder](file:///c:/Users/Lenovo/Downloads/Documents/workspace/python%20scripts/tools/duplicate-finder/) | Scan directories recursively for duplicate files by content hash and optionally move them to quarantine. |
 
 ## Usage
