@@ -38,7 +38,7 @@ category-name/script-name/
 
 | Category | Script | Description |
 |---|---|---|
-| _(none yet)_ | | |
+| `tools` | [duplicate-finder](file:///c:/Users/Lenovo/Downloads/Documents/workspace/python%20scripts/tools/duplicate-finder/) | Scan directories recursively for duplicate files by content hash and optionally move them to quarantine. |
 
 ## Usage
 

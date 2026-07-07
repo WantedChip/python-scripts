@@ -1,0 +1,351 @@
+"""Duplicate File Finder.
+
+Scans specified directories for duplicate files by comparing file content hashes.
+Groups files by size first to optimize disk reads, then calculates hashes for
+files of the same size. Reports duplicate groups, wasted space, and supports
+moving duplicates to a quarantine directory.
+"""
+
+import argparse
+import hashlib
+import logging
+import os
+import shutil
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import Dict, List, Set, Tuple
+
+
+def format_size(size_in_bytes: int) -> str:
+    """Formats bytes into a human-readable string (e.g. KB, MB, GB).
+
+    Args:
+        size_in_bytes: Size in bytes to format.
+
+    Returns:
+        A human-readable string representation of the size.
+    """
+    if size_in_bytes < 1024:
+        return f"{size_in_bytes} B"
+    for unit in ["KB", "MB", "GB", "TB"]:
+        size_in_bytes /= 1024.0
+        if size_in_bytes < 1024:
+            return f"{size_in_bytes:.2f} {unit}"
+    return f"{size_in_bytes:.2f} PB"
+
+
+def calculate_hash(
+    file_path: Path, hash_algo: str = "sha256", chunk_size: int = 65536
+) -> str:
+    """Calculates the hash of a file using chunked reading to save memory.
+
+    Args:
+        file_path: The Path of the file to hash.
+        hash_algo: The hashing algorithm to use (e.g., md5, sha1, sha256).
+        chunk_size: The chunk size in bytes for reading the file.
+
+    Returns:
+        The hex digest of the file contents.
+
+    Raises:
+        ValueError: If the hash algorithm is not supported.
+        OSError: If there's an error reading the file.
+    """
+    try:
+        hasher = hashlib.new(hash_algo)
+    except ValueError as e:
+        logging.error(f"Unsupported hash algorithm: {hash_algo}")
+        raise e
+
+    with open(file_path, "rb") as f:
+        while chunk := f.read(chunk_size):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def scan_directories(paths: List[Path], min_size: int = 0) -> Dict[int, List[Path]]:
+    """Scans directories recursively and groups regular files by their size.
+
+    Args:
+        paths: A list of Paths to scan.
+        min_size: The minimum file size in bytes to include.
+
+    Returns:
+        A dictionary mapping file sizes to lists of matching resolved file Paths.
+    """
+    files_by_size: Dict[int, List[Path]] = defaultdict(list)
+    seen_resolved_paths: Set[Path] = set()
+
+    for path in paths:
+        if not path.exists():
+            logging.warning(f"Path does not exist: {path}")
+            continue
+
+        if path.is_file():
+            try:
+                resolved = path.resolve()
+                if resolved not in seen_resolved_paths:
+                    size = resolved.stat().st_size
+                    if size >= min_size:
+                        files_by_size[size].append(resolved)
+                        seen_resolved_paths.add(resolved)
+            except OSError as e:
+                logging.warning(f"Could not access file {path}: {e}")
+            continue
+
+        logging.info(f"Scanning directory: {path}")
+        for root, _, files in os.walk(path):
+            for file in files:
+                file_path = Path(root) / file
+                try:
+                    resolved = file_path.resolve()
+                    if resolved not in seen_resolved_paths:
+                        if resolved.is_file() and not resolved.is_symlink():
+                            size = resolved.stat().st_size
+                            if size >= min_size:
+                                files_by_size[size].append(resolved)
+                                seen_resolved_paths.add(resolved)
+                except OSError as e:
+                    logging.debug(f"Could not access {file_path}: {e}")
+
+    return files_by_size
+
+
+def find_duplicates(
+    files_by_size: Dict[int, List[Path]], hash_algo: str = "sha256"
+) -> Tuple[List[Tuple[int, str, Path, List[Path]]], int]:
+    """Identifies duplicate files by comparing content hashes of same-sized files.
+
+    For each duplicate set, the "original" is determined deterministically
+    by sorting by path string length (shortest path first) and then alphabetically.
+
+    Args:
+        files_by_size: Dictionary mapping file sizes to lists of Paths.
+        hash_algo: Hashing algorithm to use.
+
+    Returns:
+        A tuple containing:
+          - A list of duplicate groups, each represented as a tuple of:
+            (file_size, file_hash, original_path, list_of_duplicate_paths)
+          - The total wasted space in bytes.
+    """
+    duplicate_groups: List[Tuple[int, str, Path, List[Path]]] = []
+    total_wasted_space = 0
+
+    # Process larger files first (optional, but helpful for debugging/visualizing)
+    for size, paths in sorted(files_by_size.items(), reverse=True):
+        if len(paths) <= 1:
+            continue
+
+        logging.debug(f"Hashing {len(paths)} files of size {size} bytes...")
+        hashes: Dict[str, List[Path]] = defaultdict(list)
+        for path in paths:
+            try:
+                h = calculate_hash(path, hash_algo)
+                hashes[h].append(path)
+            except OSError as e:
+                logging.warning(f"Failed to calculate hash for {path}: {e}")
+                continue
+
+        for h, hashed_paths in hashes.items():
+            if len(hashed_paths) <= 1:
+                continue
+
+            # Deterministically sort: shortest absolute path string first,
+            # then alphabetically.
+            hashed_paths.sort(key=lambda p: (len(str(p)), str(p)))
+            original = hashed_paths[0]
+            duplicates = hashed_paths[1:]
+
+            duplicate_groups.append((size, h, original, duplicates))
+            total_wasted_space += size * len(duplicates)
+
+    return duplicate_groups, total_wasted_space
+
+
+def quarantine_duplicates(
+    duplicate_groups: List[Tuple[int, str, Path, List[Path]]],
+    scan_roots: List[Path],
+    quarantine_root: Path,
+    dry_run: bool = False,
+) -> int:
+    """Moves duplicate files to a quarantine folder while resolving collisions.
+
+    Maintains relative directory structure based on which scan root the file
+    lives under. If a filename collision occurs, a suffix is appended.
+
+    Args:
+        duplicate_groups: The list of duplicate groups.
+        scan_roots: The scan roots used to find the files (for relative path structure).
+        quarantine_root: The target directory to quarantine files.
+        dry_run: If True, log actions without modifying files.
+
+    Returns:
+        The number of successfully moved files.
+    """
+    quarantine_root = quarantine_root.resolve()
+    resolved_scan_roots = [r.resolve() for r in scan_roots]
+
+    if not dry_run:
+        try:
+            quarantine_root.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            logging.error(f"Failed to create quarantine folder {quarantine_root}: {e}")
+            return 0
+
+    moved_count = 0
+
+    for _, _, _, duplicates in duplicate_groups:
+        for dup in duplicates:
+            # Find matching scan root
+            relative_path = None
+            for scan_root in resolved_scan_roots:
+                try:
+                    relative_path = dup.relative_to(scan_root)
+                    break
+                except ValueError:
+                    continue
+
+            if relative_path is None:
+                relative_path = Path(dup.name)
+
+            target_path = quarantine_root / relative_path
+
+            # Collision resolution: append suffix if file exists
+            if target_path.exists():
+                suffix_counter = 1
+                parent = target_path.parent
+                stem = target_path.stem
+                suffix = target_path.suffix
+                while True:
+                    candidate = parent / f"{stem}_{suffix_counter}{suffix}"
+                    if not candidate.exists():
+                        target_path = candidate
+                        break
+                    suffix_counter += 1
+
+            action_desc = "Would move" if dry_run else "Moving"
+            logging.info(f"{action_desc}: {dup} -> {target_path}")
+
+            if not dry_run:
+                try:
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(dup), str(target_path))
+                    moved_count += 1
+                except OSError as e:
+                    logging.error(f"Failed to move {dup} to {target_path}: {e}")
+            else:
+                moved_count += 1
+
+    return moved_count
+
+
+def parse_arguments() -> argparse.Namespace:
+    """Parses command-line arguments.
+
+    Returns:
+        Parsed CLI arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Scan directories for duplicate files by file hash."
+    )
+    parser.add_argument(
+        "paths",
+        type=Path,
+        nargs="+",
+        help="One or more directories (or files) to scan for duplicates.",
+    )
+    parser.add_argument(
+        "-q",
+        "--quarantine",
+        type=Path,
+        help="Move duplicate files to this directory instead of deleting or keeping them.",
+    )
+    parser.add_argument(
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Show what would be quarantined without actually moving any files.",
+    )
+    parser.add_argument(
+        "--hash",
+        choices=["md5", "sha1", "sha256"],
+        default="sha256",
+        help="Hashing algorithm to use (default: sha256).",
+    )
+    parser.add_argument(
+        "--min-size",
+        type=int,
+        default=0,
+        help="Minimum file size in bytes to check (default: 0).",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Increase logging verbosity.",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Main execution function."""
+    args = parse_arguments()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(levelname)s: %(message)s",
+        stream=sys.stderr,
+    )
+
+    # Resolve scan paths
+    scan_paths = [p.resolve() for p in args.paths]
+
+    logging.info("Starting duplicate file scan...")
+    files_by_size = scan_directories(scan_paths, min_size=args.min_size)
+
+    total_scanned_files = sum(len(paths) for paths in files_by_size.values())
+    logging.info(
+        f"Scanned {total_scanned_files} files with size >= {args.min_size} bytes."
+    )
+
+    duplicate_groups, wasted_space = find_duplicates(
+        files_by_size, hash_algo=args.hash
+    )
+
+    # Print Report to standard output
+    if not duplicate_groups:
+        print("No duplicate files found.")
+        return
+
+    print("\n--- Duplicate Files Report ---")
+    for size, file_hash, original, duplicates in duplicate_groups:
+        print(f"\nSize: {format_size(size)} | Hash ({args.hash}): {file_hash}")
+        print(f"  [Original]  {original}")
+        for dup in duplicates:
+            print(f"  [Duplicate] {dup}")
+
+    print("\n--- Summary ---")
+    print(f"Total duplicate groups: {len(duplicate_groups)}")
+    total_dups = sum(len(dups) for _, _, _, dups in duplicate_groups)
+    print(f"Total duplicate files:  {total_dups}")
+    print(f"Total wasted space:     {format_size(wasted_space)}")
+
+    # Move duplicates if quarantine directory is specified
+    if args.quarantine:
+        print("\n--- Quarantining Duplicates ---")
+        moved = quarantine_duplicates(
+            duplicate_groups,
+            scan_roots=scan_paths,
+            quarantine_root=args.quarantine,
+            dry_run=args.dry_run,
+        )
+        status_word = "would be moved (dry run)" if args.dry_run else "moved"
+        print(f"Result: {moved} of {total_dups} duplicate files {status_word}.")
+
+
+if __name__ == "__main__":
+    main()
