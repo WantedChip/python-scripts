@@ -42,3 +42,11 @@ next-env.d.ts
 
 # agents, logs & internal files
 .agents/
+
+#python files
+__pycache__/
+*.pyc
+.venv/
+.env
+dist/
+*.egg-info/
