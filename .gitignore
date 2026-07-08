@@ -50,3 +50,7 @@ __pycache__/
 .env
 dist/
 *.egg-info/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
