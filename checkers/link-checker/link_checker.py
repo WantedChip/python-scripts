@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
+# pylint: disable=import-error,too-many-locals,too-many-branches
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -93,7 +94,8 @@ class CheckSummary:
 # HTTP helpers
 # ---------------------------------------------------------------------------
 
-def build_session(user_agent: str, timeout: int) -> requests.Session:
+
+def build_session(user_agent: str, _timeout: int) -> requests.Session:
     """Build a requests Session with retry logic and custom headers.
 
     Args:
@@ -198,6 +200,7 @@ def check_url(
 # Link extraction
 # ---------------------------------------------------------------------------
 
+
 def extract_links_from_markdown(content: str, base_path: str) -> List[Tuple[str, str]]:
     """Extract all links from Markdown content.
 
@@ -244,6 +247,7 @@ def extract_links_from_html(content: str, base_url: str) -> List[Tuple[str, str]
 # Crawl modes
 # ---------------------------------------------------------------------------
 
+
 def scan_local_files(
     root: str,
     extensions: Tuple[str, ...],
@@ -273,7 +277,8 @@ def scan_local_files(
             source = str(filepath)
             if ext in (".md", ".markdown"):
                 raw_links = extract_links_from_markdown(content, source)
-                # Resolve relative links against base_url if provided, else skip non-http
+                # Resolve relative links against base_url if provided,
+                # else skip non-http
                 for href, src in raw_links:
                     if href.startswith(("http://", "https://")):
                         all_links.append((href, src))
@@ -294,7 +299,7 @@ def crawl_website(
     session: requests.Session,
     timeout: int,
     max_depth: int,
-    same_domain_only: bool,
+    same_domain_only: bool,  # pylint: disable=unused-argument
 ) -> Tuple[List[Tuple[str, str]], List[LinkResult]]:
     """BFS-crawl a website collecting all links.
 
@@ -336,14 +341,26 @@ def crawl_website(
             else:
                 category = "dead"
                 crawl_results.append(
-                    LinkResult(url=url, status_code=code, category=category,
-                               final_url=final, error_message=None, source=start_url)
+                    LinkResult(
+                        url=url,
+                        status_code=code,
+                        category=category,
+                        final_url=final,
+                        error_message=None,
+                        source=start_url,
+                    )
                 )
                 continue
 
             crawl_results.append(
-                LinkResult(url=url, status_code=code, category=category,
-                           final_url=final, error_message=None, source=start_url)
+                LinkResult(
+                    url=url,
+                    status_code=code,
+                    category=category,
+                    final_url=final,
+                    error_message=None,
+                    source=start_url,
+                )
             )
 
             if depth >= max_depth:
@@ -367,16 +384,25 @@ def crawl_website(
 
         except requests.exceptions.Timeout:
             crawl_results.append(
-                LinkResult(url=url, status_code=None, category="timeout",
-                           final_url=None,
-                           error_message=f"Timed out after {timeout}s",
-                           source=start_url)
+                LinkResult(
+                    url=url,
+                    status_code=None,
+                    category="timeout",
+                    final_url=None,
+                    error_message=f"Timed out after {timeout}s",
+                    source=start_url,
+                )
             )
         except requests.exceptions.RequestException as exc:
             crawl_results.append(
-                LinkResult(url=url, status_code=None, category="error",
-                           final_url=None, error_message=str(exc),
-                           source=start_url)
+                LinkResult(
+                    url=url,
+                    status_code=None,
+                    category="error",
+                    final_url=None,
+                    error_message=str(exc),
+                    source=start_url,
+                )
             )
 
     return external_links, crawl_results
@@ -385,6 +411,7 @@ def crawl_website(
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
+
 
 def print_report(summary: CheckSummary, verbose: bool) -> None:
     """Print a human-readable report to stdout.
@@ -451,8 +478,14 @@ def export_report(summary: CheckSummary, output_path: str, fmt: str) -> None:
         with open(output_path, "w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(
                 fh,
-                fieldnames=["url", "status_code", "category", "final_url",
-                            "error_message", "source"],
+                fieldnames=[
+                    "url",
+                    "status_code",
+                    "category",
+                    "final_url",
+                    "error_message",
+                    "source",
+                ],
             )
             writer.writeheader()
             for r in summary.results:
@@ -473,6 +506,7 @@ def export_report(summary: CheckSummary, output_path: str, fmt: str) -> None:
 # Argument parsing
 # ---------------------------------------------------------------------------
 
+
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command-line arguments.
 
@@ -483,7 +517,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         Parsed namespace.
     """
     parser = argparse.ArgumentParser(
-        description="Broken Link Checker — crawl a website or scan local files for dead links.",
+        description=(
+            "Broken Link Checker — crawl a website or scan local "
+            "files for dead links."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -494,14 +531,19 @@ Examples:
   python link_checker.py --local ./docs
 
   # Concurrent check with JSON output
-  python link_checker.py --url https://example.com --workers 20 --output report.json --format json
+  python link_checker.py --url https://example.com --workers 20 \\
+                         --output report.json --format json
 """,
     )
 
     source_group = parser.add_mutually_exclusive_group(required=True)
-    source_group.add_argument("--url", metavar="URL", help="Start URL for website crawl.")
     source_group.add_argument(
-        "--local", metavar="DIR", help="Local directory to scan for Markdown/HTML files."
+        "--url", metavar="URL", help="Start URL for website crawl."
+    )
+    source_group.add_argument(
+        "--local",
+        metavar="DIR",
+        help="Local directory to scan for Markdown/HTML files.",
     )
 
     parser.add_argument(
@@ -561,6 +603,7 @@ Examples:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def run_checks(
     links_with_sources: List[Tuple[str, str]],
     session: requests.Session,
@@ -589,7 +632,9 @@ def run_checks(
     results: List[LinkResult] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         future_to_url = {
-            executor.submit(check_url, url, url_to_sources[url][0], session, timeout): url
+            executor.submit(
+                check_url, url, url_to_sources[url][0], session, timeout
+            ): url
             for url in unique_urls
         }
         for future in concurrent.futures.as_completed(future_to_url):
@@ -677,7 +722,9 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.output:
         export_report(summary, args.output, args.format)
 
-    if args.fail_on_dead and (summary.dead > 0 or summary.timeouts > 0 or summary.errors > 0):
+    if args.fail_on_dead and (
+        summary.dead > 0 or summary.timeouts > 0 or summary.errors > 0
+    ):
         sys.exit(1)
 
 

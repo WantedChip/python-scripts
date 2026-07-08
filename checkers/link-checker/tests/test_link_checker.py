@@ -1,19 +1,17 @@
 """Tests for link_checker.py."""
 
-import json
-import os
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,unused-argument,too-few-public-methods
 import sys
-import textwrap
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 import requests
 
 # Ensure the parent directory is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from link_checker import (
+from link_checker import (  # noqa: E402
     LinkResult,
     build_summary,
     check_url,
