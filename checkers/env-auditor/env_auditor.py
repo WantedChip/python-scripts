@@ -27,13 +27,35 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 DEFAULT_SOURCE_EXTS: Tuple[str, ...] = (
-    ".py", ".js", ".ts", ".jsx", ".tsx", ".go", ".rb", ".sh", ".php",
-    ".java", ".kt", ".rs", ".cs", ".cpp", ".c", ".yaml", ".yml", ".json",
-    ".toml", ".conf", ".ini", ".dockerfile", ".tf",
+    ".py",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".go",
+    ".rb",
+    ".sh",
+    ".php",
+    ".java",
+    ".kt",
+    ".rs",
+    ".cs",
+    ".cpp",
+    ".c",
+    ".yaml",
+    ".yml",
+    ".json",
+    ".toml",
+    ".conf",
+    ".ini",
+    ".dockerfile",
+    ".tf",
 )
 DOCKER_COMPOSE_PATTERNS: Tuple[str, ...] = (
-    "docker-compose*.yml", "docker-compose*.yaml",
-    "compose*.yml", "compose*.yaml",
+    "docker-compose*.yml",
+    "docker-compose*.yaml",
+    "compose*.yml",
+    "compose*.yaml",
 )
 
 # Pattern to find env var references in source code
@@ -53,7 +75,9 @@ VAR_USAGE_PATTERNS: List[re.Pattern] = [
 ]
 
 # Pattern for Docker Compose environment variable references: ${VAR} or $VAR
-DOCKER_VAR_RE = re.compile(r"\$\{([A-Z_][A-Z0-9_]*?)(?::-[^}]*)?\}|\$([A-Z_][A-Z0-9_]*)")
+DOCKER_VAR_RE = re.compile(
+    r"\$\{([A-Z_][A-Z0-9_]*?)(?::-[^}]*)?\}|\$([A-Z_][A-Z0-9_]*)"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -193,8 +217,7 @@ def scan_source_for_usage(
     for dirpath, dirnames, filenames in os.walk(root):
         # Prune excluded dirs in-place
         dirnames[:] = [
-            d for d in dirnames
-            if d not in exclude_dirs and not d.startswith(".")
+            d for d in dirnames if d not in exclude_dirs and not d.startswith(".")
         ]
         for filename in filenames:
             if not any(filename.endswith(ext) for ext in extensions):
@@ -216,6 +239,7 @@ def scan_source_for_usage(
 # ---------------------------------------------------------------------------
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 def audit(
     env_path: str,
     example_path: Optional[str],
@@ -280,7 +304,9 @@ def audit(
 # ---------------------------------------------------------------------------
 
 
-def print_report(result: AuditResult, env_path: str, example_path: Optional[str]) -> None:
+def print_report(
+    result: AuditResult, env_path: str, example_path: Optional[str]
+) -> None:
     """Print a formatted audit report.
 
     Args:
@@ -304,7 +330,9 @@ def print_report(result: AuditResult, env_path: str, example_path: Optional[str]
         print()
 
     _section("Undocumented (in .env, missing from .env.example)", result.undocumented)
-    _section("Missing Locally (in .env.example, missing from .env)", result.missing_locally)
+    _section(
+        "Missing Locally (in .env.example, missing from .env)", result.missing_locally
+    )
     _section("Unused Variables (declared but never referenced in code)", result.unused)
     _section("Unknown Variables (used in code but not declared)", result.unknown)
 
@@ -316,8 +344,10 @@ def print_report(result: AuditResult, env_path: str, example_path: Optional[str]
 
     print("=" * 60)
     total_issues = (
-        len(result.undocumented) + len(result.missing_locally)
-        + len(result.unused) + len(result.unknown)
+        len(result.undocumented)
+        + len(result.missing_locally)
+        + len(result.unused)
+        + len(result.unknown)
     )
     print(f"  Total issues: {total_issues}")
     print("=" * 60 + "\n")
@@ -338,7 +368,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         Parsed namespace.
     """
     parser = argparse.ArgumentParser(
-        description=".env Auditor — compare .env, .env.example, Docker files, and source code.",
+        description=(
+            ".env Auditor — compare .env, .env.example, "
+            "Docker files, and source code."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -420,7 +453,9 @@ def main(argv: Optional[List[str]] = None) -> None:
         if os.path.isfile(candidate):
             example_path = candidate
         else:
-            logger.warning(".env.example not found at '%s' — skipping comparison.", candidate)
+            logger.warning(
+                ".env.example not found at '%s' — skipping comparison.", candidate
+            )
 
     source_root = os.path.abspath(args.source)
     if not os.path.isdir(source_root):
@@ -447,8 +482,10 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     if args.fail_on_issues:
         total = (
-            len(result.undocumented) + len(result.missing_locally)
-            + len(result.unused) + len(result.unknown)
+            len(result.undocumented)
+            + len(result.missing_locally)
+            + len(result.unused)
+            + len(result.unknown)
         )
         if total > 0:
             sys.exit(1)

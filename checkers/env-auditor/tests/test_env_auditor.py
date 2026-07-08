@@ -1,20 +1,16 @@
 """Tests for env_auditor.py."""
 
-import os
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,unused-import
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from env_auditor import (
-    AuditResult,
+from env_auditor import (  # noqa: E402
     audit,
     parse_env_file,
     scan_source_for_usage,
-    parse_docker_compose_env_vars,
-    find_docker_compose_files,
 )
 
 
