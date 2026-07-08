@@ -8,13 +8,16 @@ from typing import Any
 
 import pytest
 
-
 # Ensure parent folder is in path for imports to resolve.
 # The actual script location will be in 'automation/downloads-organizer/'
 # but for local proposed testing, we mock/import from path.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from downloads_organizer import FolderOrganizer
+# pylint: disable=wrong-import-position,import-error,too-few-public-methods
+# pylint: disable=import-outside-toplevel,unused-argument,missing-class-docstring
+# pylint: disable=missing-function-docstring,keyword-arg-before-vararg
+# pylint: disable=unnecessary-lambda
+from downloads_organizer import FolderOrganizer  # noqa: E402
 
 
 def test_classify_file(tmp_path: Path) -> None:
@@ -197,6 +200,7 @@ def test_is_file_stable_stabilizes(
     file_path.write_text("hello")
 
     sleep_called = 0
+
     def mock_sleep(seconds: float) -> None:
         nonlocal sleep_called
         sleep_called += 1
@@ -224,6 +228,7 @@ def test_is_file_stable_unstable(
             return next(size_iter)
 
     original_stat = Path.stat
+
     def mock_stat(self, *args: Any, **kwargs: Any) -> Any:
         if str(self) == str(file_path):
             return MockStat()
@@ -235,10 +240,7 @@ def test_is_file_stable_unstable(
     assert organizer.is_file_stable(file_path, delay=0.1, retries=3) is False
 
 
-
-def test_is_file_stable_locked(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_is_file_stable_locked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests is_file_stable when file size is same but is locked by another process."""
     organizer = FolderOrganizer(source=tmp_path, stability_check=True)
     file_path = tmp_path / "locked.txt"
@@ -247,6 +249,7 @@ def test_is_file_stable_locked(
     monkeypatch.setattr("time.sleep", lambda s: None)
 
     original_open = open
+
     def mock_open(path: Any, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
         if str(path) == str(file_path) and "ab" in mode:
             raise PermissionError("Locked file")
@@ -262,6 +265,7 @@ def test_download_watch_handler(
 ) -> None:
     """Tests the FileSystemEventHandler subclass DownloadWatchHandler."""
     from downloads_organizer import HAS_WATCHDOG
+
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
@@ -303,8 +307,7 @@ def test_download_watch_handler(
 
     # 3. Test on_moved with directory
     dir_moved = FileSystemEvent(
-        src_path=str(tmp_path / "old_sub"),
-        dest_path=str(tmp_path / "new_sub")
+        src_path=str(tmp_path / "old_sub"), dest_path=str(tmp_path / "new_sub")
     )
     dir_moved.is_directory = True
     handler.on_moved(dir_moved)
@@ -313,9 +316,7 @@ def test_download_watch_handler(
     # 4. Test on_moved with file
     dest_path = tmp_path / "moved_photo.png"
     dest_path.write_text("moved_photo")
-    file_moved = FileSystemEvent(
-        src_path=str(file_path), dest_path=str(dest_path)
-    )
+    file_moved = FileSystemEvent(src_path=str(file_path), dest_path=str(dest_path))
     file_moved.is_directory = False
     handler.on_moved(file_moved)
     assert len(stable_called_with) == 1
@@ -369,6 +370,7 @@ def test_config_schema_validation_rule_missing_extensions_and_patterns(
 def test_watch_mode_missing_directory(tmp_path: Path) -> None:
     """Tests that run_watch_mode exits with 1 when source dir does not exist."""
     from downloads_organizer import run_watch_mode
+
     non_existent = tmp_path / "does_not_exist"
     organizer = FolderOrganizer(source=non_existent)
 
@@ -380,6 +382,7 @@ def test_watch_mode_missing_directory(tmp_path: Path) -> None:
 def test_is_file_stable_pure_mock(monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests is_file_stable using pure mocks for exists, stat and sleep."""
     from unittest.mock import MagicMock
+
     mock_path = MagicMock(spec=Path)
     mock_path.exists.return_value = True
 
@@ -406,6 +409,7 @@ def test_download_watch_handler_fails_stability(
 ) -> None:
     """Tests DownloadWatchHandler when file stability check fails."""
     from downloads_organizer import HAS_WATCHDOG
+
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
@@ -415,6 +419,7 @@ def test_download_watch_handler_fails_stability(
     handler = DownloadWatchHandler(organizer)
 
     is_stable_called = []
+
     def mock_is_file_stable(p):
         is_stable_called.append(p)
         return False
@@ -422,9 +427,7 @@ def test_download_watch_handler_fails_stability(
     monkeypatch.setattr(organizer, "is_file_stable", mock_is_file_stable)
 
     organize_called = []
-    monkeypatch.setattr(
-        organizer, "organize_file", lambda p: organize_called.append(p)
-    )
+    monkeypatch.setattr(organizer, "organize_file", lambda p: organize_called.append(p))
 
     file_path = tmp_path / "unstable_photo.png"
     file_path.write_text("unstable")
@@ -439,9 +442,7 @@ def test_download_watch_handler_fails_stability(
     is_stable_called.clear()
     dest_path = tmp_path / "unstable_moved_photo.png"
     dest_path.write_text("unstable_moved")
-    file_moved = FileSystemEvent(
-        src_path=str(file_path), dest_path=str(dest_path)
-    )
+    file_moved = FileSystemEvent(src_path=str(file_path), dest_path=str(dest_path))
     file_moved.is_directory = False
     handler.on_moved(file_moved)
 
@@ -450,11 +451,10 @@ def test_download_watch_handler_fails_stability(
     assert len(organize_called) == 0
 
 
-def test_watchdog_ignore_check(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_watchdog_ignore_check(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests that on_created and on_moved check should_ignore first and return early."""
     from downloads_organizer import HAS_WATCHDOG
+
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
@@ -481,7 +481,9 @@ def test_watchdog_ignore_check(
     # 2. Test on_moved with ignored file
     dest_ignored_path = tmp_path / "download_2.crdownload"
     dest_ignored_path.write_text("temp2")
-    event_moved = FileSystemEvent(src_path=str(ignored_path), dest_path=str(dest_ignored_path))
+    event_moved = FileSystemEvent(
+        src_path=str(ignored_path), dest_path=str(dest_ignored_path)
+    )
     event_moved.is_directory = False
     handler.on_moved(event_moved)
     assert len(is_stable_called) == 0
@@ -490,12 +492,15 @@ def test_watchdog_ignore_check(
 def test_is_file_stable_deleted_during_check(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Tests that is_file_stable returns False early if the file is deleted during the check."""
+    """Tests that is_file_stable returns False early if the file is deleted
+    during the check.
+    """
     organizer = FolderOrganizer(source=tmp_path, stability_check=True)
     file_path = tmp_path / "dynamic.txt"
     file_path.write_text("start")
 
     sleep_called = 0
+
     def mock_sleep(seconds: float) -> None:
         nonlocal sleep_called
         sleep_called += 1
@@ -506,10 +511,10 @@ def test_is_file_stable_deleted_during_check(
     monkeypatch.setattr("time.sleep", mock_sleep)
 
     # Run with retries=5, delay=0.1
-    # On the first iteration, file exists, size is checked, sleep is called, which deletes the file.
-    # On the second iteration, the loop checks not path.exists() and returns False immediately.
+    # On the first iteration, file exists, size is checked, sleep is called,
+    # which deletes the file.
+    # On the second iteration, the loop checks not path.exists() and returns
+    # False immediately.
     assert organizer.is_file_stable(file_path, delay=0.1, retries=5) is False
     # The sleep should have been called only once, and we didn't do all 5 retries/sleeps
     assert sleep_called == 1
-
-

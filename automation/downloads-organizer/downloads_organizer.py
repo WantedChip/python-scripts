@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Set
 
 # Optional watchdog integration
 try:
-    from watchdog.events import FileSystemEvent, FileSystemEventHandler
+    from watchdog.events import FileSystemEventHandler
     from watchdog.observers import Observer
 
     HAS_WATCHDOG = True
@@ -82,6 +82,7 @@ DEFAULT_CONFIG = {
 }
 
 
+# pylint: disable=too-many-instance-attributes
 class FolderOrganizer:
     """Class to manage the file scanning and sorting logic."""
 
@@ -99,6 +100,7 @@ class FolderOrganizer:
     stability_delay: float
     stability_retries: int
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         source: Path,
@@ -109,7 +111,7 @@ class FolderOrganizer:
         dry_run: bool = False,
         stability_check: bool = True,
         stability_delay: float = 0.5,
-        stability_retries: int = 6,
+        stability_retries: int = 3,
     ) -> None:
         """Initializes the FolderOrganizer with settings and configurations.
 
@@ -167,7 +169,7 @@ class FolderOrganizer:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 custom_config = json.load(f)
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             print(
                 f"Error: Failed to load custom config from {config_path}: {e}",
                 file=sys.stderr,
@@ -211,7 +213,7 @@ class FolderOrganizer:
         # Merge custom config with default structure for safety
         config = DEFAULT_CONFIG.copy()
         config.update(custom_config)
-        logging.info(f"Successfully loaded custom config from {config_path}")
+        logging.info("Successfully loaded custom config from %s", config_path)
         return config
 
     def should_ignore(self, path: Path) -> bool:
@@ -335,11 +337,11 @@ class FolderOrganizer:
             return target_path
 
         if self.conflict_strategy == "overwrite":
-            logging.warning(f"File conflict: {target_path} will be overwritten.")
+            logging.warning("File conflict: %s will be overwritten.", target_path)
             return target_path
 
         if self.conflict_strategy == "skip":
-            logging.info(f"File conflict: Skipping {target_path.name}")
+            logging.info("File conflict: Skipping %s", target_path.name)
             return None
 
         # default: rename with suffix
@@ -379,7 +381,7 @@ class FolderOrganizer:
                 date_str = datetime.fromtimestamp(mtime).strftime("%Y-%m")
                 target_dir = target_dir / date_str
             except OSError as e:
-                logging.error(f"Failed to read file timestamp for {path}: {e}")
+                logging.error("Failed to read file timestamp for %s: %s", path, e)
 
         # Resolve conflict
         target_path = target_dir / path.name
@@ -389,7 +391,7 @@ class FolderOrganizer:
             return False
 
         action_desc = "[DRY RUN] Would move" if self.dry_run else "Moving"
-        logging.info(f"{action_desc}: {path} -> {final_dest}")
+        logging.info("%s: %s -> %s", action_desc, path, final_dest)
 
         if not self.dry_run:
             try:
@@ -398,7 +400,7 @@ class FolderOrganizer:
                 shutil.move(str(path), str(final_dest))
                 return True
             except OSError as e:
-                logging.error(f"Failed to move {path} to {final_dest}: {e}")
+                logging.error("Failed to move %s to %s: %s", path, final_dest, e)
                 return False
         return True
 
@@ -408,11 +410,11 @@ class FolderOrganizer:
         Returns:
             Number of organized files.
         """
-        logging.info(f"Scanning source directory: {self.source}")
+        logging.info("Scanning source directory: %s", self.source)
         if not self.source.exists() or not self.source.is_dir():
             logging.error(
-                f"Source directory {self.source} does not exist or is "
-                "not a directory."
+                "Source directory %s does not exist or is not a directory.",
+                self.source,
             )
             return 0
 
@@ -421,51 +423,58 @@ class FolderOrganizer:
             # Only iterate through files in the immediate directory to avoid
             # recursively reorganizing user-managed subfolders.
             for item in self.source.iterdir():
-                if item.is_file():
-                    # Check stability first so on-demand scans don't grab active writes
-                    if not self.should_ignore(item):
-                        if self.is_file_stable(item):
-                            if self.organize_file(item):
-                                organized_count += 1
+                if not item.is_file():
+                    continue
+                # Check stability first so on-demand scans don't grab active writes
+                if self.should_ignore(item):
+                    continue
+                if not self.is_file_stable(item):
+                    continue
+                if self.organize_file(item):
+                    organized_count += 1
         except OSError as e:
-            logging.error(f"Error accessing directory {self.source}: {e}")
+            logging.error("Error accessing directory %s: %s", self.source, e)
 
-        logging.info(f"Scan complete. Organized {organized_count} files.")
+        logging.info("Scan complete. Organized %d files.", organized_count)
         return organized_count
 
 
 # FileSystem event handler for Watchdog mode
 if HAS_WATCHDOG:
+    BaseWatchHandler = FileSystemEventHandler
+else:
+    BaseWatchHandler = object  # type: ignore
 
-    class DownloadWatchHandler(FileSystemEventHandler):
-        """Watchdog handler for reacting to new/renamed files."""
 
-        organizer: FolderOrganizer
+class DownloadWatchHandler(BaseWatchHandler):  # pylint: disable=too-few-public-methods
+    """Watchdog handler for reacting to new/renamed files."""
 
-        def __init__(self, organizer: FolderOrganizer) -> None:
-            self.organizer = organizer
+    def __init__(self, organizer: FolderOrganizer) -> None:
+        self.organizer = organizer
 
-        def on_created(self, event: FileSystemEvent) -> None:
-            if event.is_directory:
-                return
-            path = Path(event.src_path)
-            logging.debug(f"Watchdog: file created event for {path}")
-            if self.organizer.should_ignore(path):
-                return
-            # Wait for writing to stabilize
-            if self.organizer.is_file_stable(path):
-                self.organizer.organize_file(path)
+    def on_created(self, event: Any) -> None:
+        """Event handler for file creation events."""
+        if event.is_directory:
+            return
+        path = Path(event.src_path)
+        logging.debug("Watchdog: file created event for %s", path)
+        if self.organizer.should_ignore(path):
+            return
+        # Wait for writing to stabilize
+        if self.organizer.is_file_stable(path):
+            self.organizer.organize_file(path)
 
-        def on_moved(self, event: FileSystemEvent) -> None:
-            if event.is_directory:
-                return
-            path = Path(event.dest_path)
-            logging.debug(f"Watchdog: file moved/renamed event to {path}")
-            if self.organizer.should_ignore(path):
-                return
-            # Wait for writing to stabilize
-            if self.organizer.is_file_stable(path):
-                self.organizer.organize_file(path)
+    def on_moved(self, event: Any) -> None:
+        """Event handler for file move/rename events."""
+        if event.is_directory:
+            return
+        path = Path(event.dest_path)
+        logging.debug("Watchdog: file moved/renamed event to %s", path)
+        if self.organizer.should_ignore(path):
+            return
+        # Wait for writing to stabilize
+        if self.organizer.is_file_stable(path):
+            self.organizer.organize_file(path)
 
 
 def run_watch_mode(organizer: FolderOrganizer) -> None:
@@ -483,8 +492,8 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
 
     if not organizer.source.exists() or not organizer.source.is_dir():
         logging.error(
-            f"Source directory {organizer.source} does not exist "
-            "or is not a directory."
+            "Source directory %s does not exist or is not a directory.",
+            organizer.source,
         )
         print(
             f"Error: Source directory {organizer.source} does not exist "
@@ -503,7 +512,7 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
     observer.schedule(handler, path=str(organizer.source), recursive=False)
     observer.start()
 
-    logging.info(f"Actively watching directory: {organizer.source}")
+    logging.info("Actively watching directory: %s", organizer.source)
     try:
         while True:
             time.sleep(1)
