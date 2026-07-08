@@ -306,6 +306,8 @@ class FolderOrganizer:
 
         last_size = -1
         for _ in range(retries_val):
+            if not path.exists():
+                return False
             try:
                 current_size = path.stat().st_size
                 if current_size == last_size:
@@ -448,6 +450,8 @@ if HAS_WATCHDOG:
                 return
             path = Path(event.src_path)
             logging.debug(f"Watchdog: file created event for {path}")
+            if self.organizer.should_ignore(path):
+                return
             # Wait for writing to stabilize
             if self.organizer.is_file_stable(path):
                 self.organizer.organize_file(path)
@@ -457,6 +461,8 @@ if HAS_WATCHDOG:
                 return
             path = Path(event.dest_path)
             logging.debug(f"Watchdog: file moved/renamed event to {path}")
+            if self.organizer.should_ignore(path):
+                return
             # Wait for writing to stabilize
             if self.organizer.is_file_stable(path):
                 self.organizer.organize_file(path)

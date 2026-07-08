@@ -288,6 +288,7 @@ def test_download_watch_handler(
 
     # 2. Test on_created with file
     file_path = tmp_path / "photo.png"
+    file_path.write_text("photo")
     file_event = FileSystemEvent(src_path=str(file_path))
     file_event.is_directory = False
     handler.on_created(file_event)
@@ -311,6 +312,7 @@ def test_download_watch_handler(
 
     # 4. Test on_moved with file
     dest_path = tmp_path / "moved_photo.png"
+    dest_path.write_text("moved_photo")
     file_moved = FileSystemEvent(
         src_path=str(file_path), dest_path=str(dest_path)
     )
@@ -399,6 +401,7 @@ def test_is_file_stable_pure_mock(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_download_watch_handler_fails_stability(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Tests DownloadWatchHandler when file stability check fails."""
@@ -408,28 +411,105 @@ def test_download_watch_handler_fails_stability(
 
     from downloads_organizer import DownloadWatchHandler, FileSystemEvent
 
-    organizer = FolderOrganizer(source=Path("."))
+    organizer = FolderOrganizer(source=tmp_path)
     handler = DownloadWatchHandler(organizer)
 
-    monkeypatch.setattr(organizer, "is_file_stable", lambda p: False)
+    is_stable_called = []
+    def mock_is_file_stable(p):
+        is_stable_called.append(p)
+        return False
+
+    monkeypatch.setattr(organizer, "is_file_stable", mock_is_file_stable)
 
     organize_called = []
     monkeypatch.setattr(
         organizer, "organize_file", lambda p: organize_called.append(p)
     )
 
-    file_event = FileSystemEvent(src_path="unstable_photo.png")
+    file_path = tmp_path / "unstable_photo.png"
+    file_path.write_text("unstable")
+    file_event = FileSystemEvent(src_path=str(file_path))
     file_event.is_directory = False
     handler.on_created(file_event)
 
+    assert len(is_stable_called) == 1
+    assert is_stable_called[0] == file_path
     assert len(organize_called) == 0
 
+    is_stable_called.clear()
+    dest_path = tmp_path / "unstable_moved_photo.png"
+    dest_path.write_text("unstable_moved")
     file_moved = FileSystemEvent(
-        src_path="old_photo.png", dest_path="unstable_moved_photo.png"
+        src_path=str(file_path), dest_path=str(dest_path)
     )
     file_moved.is_directory = False
     handler.on_moved(file_moved)
 
+    assert len(is_stable_called) == 1
+    assert is_stable_called[0] == dest_path
     assert len(organize_called) == 0
+
+
+def test_watchdog_ignore_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Tests that on_created and on_moved check should_ignore first and return early."""
+    from downloads_organizer import HAS_WATCHDOG
+    if not HAS_WATCHDOG:
+        pytest.skip("Watchdog library is not installed.")
+
+    from downloads_organizer import DownloadWatchHandler, FileSystemEvent
+
+    organizer = FolderOrganizer(source=tmp_path)
+    handler = DownloadWatchHandler(organizer)
+
+    is_stable_called = []
+    monkeypatch.setattr(
+        organizer, "is_file_stable", lambda p: is_stable_called.append(p) or True
+    )
+
+    # We use an ignored extension (e.g. .tmp or .crdownload)
+    ignored_path = tmp_path / "download.tmp"
+    ignored_path.write_text("temp")
+
+    # 1. Test on_created with ignored file
+    event_created = FileSystemEvent(src_path=str(ignored_path))
+    event_created.is_directory = False
+    handler.on_created(event_created)
+    assert len(is_stable_called) == 0
+
+    # 2. Test on_moved with ignored file
+    dest_ignored_path = tmp_path / "download_2.crdownload"
+    dest_ignored_path.write_text("temp2")
+    event_moved = FileSystemEvent(src_path=str(ignored_path), dest_path=str(dest_ignored_path))
+    event_moved.is_directory = False
+    handler.on_moved(event_moved)
+    assert len(is_stable_called) == 0
+
+
+def test_is_file_stable_deleted_during_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Tests that is_file_stable returns False early if the file is deleted during the check."""
+    organizer = FolderOrganizer(source=tmp_path, stability_check=True)
+    file_path = tmp_path / "dynamic.txt"
+    file_path.write_text("start")
+
+    sleep_called = 0
+    def mock_sleep(seconds: float) -> None:
+        nonlocal sleep_called
+        sleep_called += 1
+        # Delete the file during the sleep/retry loop
+        if file_path.exists():
+            file_path.unlink()
+
+    monkeypatch.setattr("time.sleep", mock_sleep)
+
+    # Run with retries=5, delay=0.1
+    # On the first iteration, file exists, size is checked, sleep is called, which deletes the file.
+    # On the second iteration, the loop checks not path.exists() and returns False immediately.
+    assert organizer.is_file_stable(file_path, delay=0.1, retries=5) is False
+    # The sleep should have been called only once, and we didn't do all 5 retries/sleeps
+    assert sleep_called == 1
 
 
