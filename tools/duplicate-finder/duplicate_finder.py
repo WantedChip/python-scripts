@@ -56,7 +56,7 @@ def calculate_hash(
     try:
         hasher = hashlib.new(hash_algo)
     except ValueError as e:
-        logging.error(f"Unsupported hash algorithm: {hash_algo}")
+        logging.error("Unsupported hash algorithm: %s", hash_algo)
         raise e
 
     with open(file_path, "rb") as f:
@@ -88,6 +88,7 @@ def should_exclude(path: Path, exclude_patterns: List[str]) -> bool:
     return False
 
 
+# pylint: disable=too-many-branches,too-many-nested-blocks
 def scan_directories(
     paths: List[Path],
     min_size: int = 0,
@@ -111,11 +112,11 @@ def scan_directories(
 
     for path in paths:
         if not path.exists():
-            logging.warning(f"Path does not exist: {path}")
+            logging.warning("Path does not exist: %s", path)
             continue
 
         if should_exclude(path, exclude_patterns):
-            logging.debug(f"Excluding input path: {path}")
+            logging.debug("Excluding input path: %s", path)
             continue
 
         if path.is_file():
@@ -127,10 +128,10 @@ def scan_directories(
                         files_by_size[size].append(resolved)
                         seen_resolved_paths.add(resolved)
             except OSError as e:
-                logging.warning(f"Could not access file {path}: {e}")
+                logging.warning("Could not access file %s: %s", path, e)
             continue
 
-        logging.info(f"Scanning directory: {path}")
+        logging.info("Scanning directory: %s", path)
         for root, dirs, files in os.walk(path):
             # Prune directories in-place to avoid walking into excluded folders
             dirs[:] = [
@@ -154,7 +155,7 @@ def scan_directories(
                                 files_by_size[size].append(resolved)
                                 seen_resolved_paths.add(resolved)
                 except OSError as e:
-                    logging.debug(f"Could not access {file_path}: {e}")
+                    logging.debug("Could not access %s: %s", file_path, e)
 
     return files_by_size
 
@@ -190,14 +191,14 @@ def find_duplicates(
         if len(paths) <= 1:
             continue
 
-        logging.debug(f"Hashing {len(paths)} files of size {size} bytes...")
+        logging.debug("Hashing %d files of size %d bytes...", len(paths), size)
         hashes: Dict[str, List[Path]] = defaultdict(list)
         for path in paths:
             try:
                 h = calculate_hash(path, hash_algo)
                 hashes[h].append(path)
             except OSError as e:
-                logging.warning(f"Failed to calculate hash for {path}: {e}")
+                logging.warning("Failed to calculate hash for %s: %s", path, e)
                 continue
 
         for h, hashed_paths in hashes.items():
@@ -234,6 +235,7 @@ def find_duplicates(
     return duplicate_groups, total_wasted_space
 
 
+# pylint: disable=too-many-locals,too-many-branches
 def quarantine_duplicates(
     duplicate_groups: List[Tuple[int, str, Path, List[Path]]],
     scan_roots: List[Path],
@@ -261,7 +263,9 @@ def quarantine_duplicates(
         try:
             quarantine_root.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            logging.error(f"Failed to create quarantine folder {quarantine_root}: {e}")
+            logging.error(
+                "Failed to create quarantine folder %s: %s", quarantine_root, e
+            )
             return 0
 
     moved_count = 0
@@ -297,7 +301,7 @@ def quarantine_duplicates(
                     suffix_counter += 1
 
             action_desc = "Would move" if dry_run else "Moving"
-            logging.info(f"{action_desc}: {dup} -> {target_path}")
+            logging.info("%s: %s -> %s", action_desc, dup, target_path)
 
             if not dry_run:
                 try:
@@ -305,7 +309,7 @@ def quarantine_duplicates(
                     shutil.move(str(dup), str(target_path))
                     moved_count += 1
                 except OSError as e:
-                    logging.error(f"Failed to move {dup} to {target_path}: {e}")
+                    logging.error("Failed to move %s to %s: %s", dup, target_path, e)
             else:
                 moved_count += 1
 
@@ -331,7 +335,10 @@ def parse_arguments() -> argparse.Namespace:
         "-q",
         "--quarantine",
         type=Path,
-        help="Move duplicate files to this directory instead of deleting or keeping them.",
+        help=(
+            "Move duplicate files to this directory "
+            "instead of deleting or keeping them."
+        ),
     )
     parser.add_argument(
         "-d",
@@ -355,13 +362,19 @@ def parse_arguments() -> argparse.Namespace:
         "--strategy",
         choices=["shortest-path", "oldest", "newest"],
         default="shortest-path",
-        help="Strategy to pick the 'original' file in a duplicate set (default: shortest-path).",
+        help=(
+            "Strategy to pick the 'original' file in a "
+            "duplicate set (default: shortest-path)."
+        ),
     )
     parser.add_argument(
         "--exclude",
         action="append",
         default=[],
-        help="Shell-style wildcard patterns to exclude from scanning (can be repeated).",
+        help=(
+            "Shell-style wildcard patterns to exclude from "
+            "scanning (can be repeated)."
+        ),
     )
     parser.add_argument(
         "-v",
@@ -372,6 +385,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# pylint: disable=too-many-locals
 def main() -> None:
     """Main execution function."""
     args = parse_arguments()
@@ -395,7 +409,7 @@ def main() -> None:
         try:
             scan_paths.append(p.resolve())
         except OSError as e:
-            logging.error(f"Failed to resolve path {p}: {e}")
+            logging.error("Failed to resolve path %s: %s", p, e)
 
     logging.info("Starting duplicate file scan...")
     files_by_size = scan_directories(
@@ -404,7 +418,9 @@ def main() -> None:
 
     total_scanned_files = sum(len(paths) for paths in files_by_size.values())
     logging.info(
-        f"Scanned {total_scanned_files} files with size >= {args.min_size} bytes."
+        "Scanned %d files with size >= %d bytes.",
+        total_scanned_files,
+        args.min_size,
     )
 
     duplicate_groups, wasted_space = find_duplicates(

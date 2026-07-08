@@ -8,9 +8,10 @@ import sys
 # Ensure the parent folder is in path for imports to resolve.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pytest
+# pylint: disable=wrong-import-position,import-error
+import pytest  # noqa: E402
 
-from duplicate_finder import (
+from duplicate_finder import (  # noqa: E402
     calculate_hash,
     find_duplicates,
     format_size,
@@ -120,10 +121,12 @@ def test_find_duplicates_shortest_path(tmp_path: Path) -> None:
     f3.write_bytes(b"duplicate_content")
 
     files = scan_directories([dir1])
-    groups, wasted = find_duplicates(files, hash_algo="sha256", strategy="shortest-path")
+    groups, wasted = find_duplicates(
+        files, hash_algo="sha256", strategy="shortest-path"
+    )
 
     assert len(groups) == 1
-    size, file_hash, original, duplicates = groups[0]
+    size, _, original, duplicates = groups[0]
     assert size == len(b"duplicate_content")
     assert original == f1.resolve()
     assert len(duplicates) == 2
