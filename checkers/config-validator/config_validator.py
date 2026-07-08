@@ -1,18 +1,20 @@
 """JSON/YAML Config Validator.
 
 A CLI tool to validate JSON and YAML configuration files against JSON Schemas,
-producing highly readable error messages with line, column, and context snippets.
+producing highly readable error messages with line, column, and context
+snippets.
 """
 
 import argparse
-import json
 import logging
 import os
 import re
 import sys
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
+import jsonschema
 import yaml
+from jsonschema.validators import validator_for
 from yaml.nodes import MappingNode, ScalarNode, SequenceNode
 
 # Configure logging
@@ -20,11 +22,12 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("config-validator")
 
 
+# pylint: disable=too-few-public-methods
 class JSONPositionParser:
-    """A recursive descent JSON parser that tracks the line and column of every node.
+    """A recursive descent JSON parser that tracks element positions.
 
-    Also detects duplicate keys which the standard json module permits but are
-    often configuration bugs.
+    Saves the line and column of every node. Also detects duplicate keys which
+    the standard json module permits but are often configuration bugs.
     """
 
     def __init__(self, text: str) -> None:
@@ -52,8 +55,9 @@ class JSONPositionParser:
         self._skip_whitespace()
         if self.pos < self.length:
             line, col = self._get_line_col(self.pos)
+            char = self.text[self.pos]
             raise ValueError(
-                f"Unexpected character {self.text[self.pos]!r} at line {line}, col {col}"
+                f"Unexpected character {char!r} at line {line}, col {col}"
             )
         return val, self.positions
 
@@ -62,6 +66,7 @@ class JSONPositionParser:
         while self.pos < self.length and self.text[self.pos] in " \t\n\r":
             self.pos += 1
 
+    # pylint: disable=too-many-return-statements,too-many-branches
     def _parse_value(self, path: Tuple[Union[str, int], ...]) -> Any:
         """Parses a value at the given path."""
         self._skip_whitespace()
@@ -75,25 +80,25 @@ class JSONPositionParser:
         char = self.text[self.pos]
         if char == "{":
             return self._parse_object(path)
-        elif char == "[":
+        if char == "[":
             return self._parse_array(path)
-        elif char == '"':
+        if char == '"':
             return self._parse_string()
-        elif char in "-0123456789":
+        if char in "-0123456789":
             return self._parse_number()
-        elif self.text.startswith("true", self.pos):
+        if self.text.startswith("true", self.pos):
             self.pos += 4
             return True
-        elif self.text.startswith("false", self.pos):
+        if self.text.startswith("false", self.pos):
             self.pos += 5
             return False
-        elif self.text.startswith("null", self.pos):
+        if self.text.startswith("null", self.pos):
             self.pos += 4
             return None
-        else:
-            raise ValueError(
-                f"Unexpected character {char!r} at line {line}, col {col}"
-            )
+
+        raise ValueError(
+            f"Unexpected character {char!r} at line {line}, col {col}"
+        )
 
     def _parse_string(self) -> str:
         """Parses a double-quoted JSON string with escape sequence support."""
@@ -106,7 +111,7 @@ class JSONPositionParser:
             if char == '"':
                 self.pos += 1
                 return "".join(chars)
-            elif char == "\\":
+            if char == "\\":
                 if self.pos + 1 >= self.length:
                     raise ValueError("Unterminated escape sequence")
                 next_char = self.text[self.pos + 1]
@@ -127,7 +132,7 @@ class JSONPositionParser:
                 elif next_char == "t":
                     chars.append("\t")
                 elif next_char == "u":
-                    hex_str = self.text[self.pos + 2 : self.pos + 6]
+                    hex_str = self.text[self.pos + 2:self.pos + 6]
                     if len(hex_str) < 4:
                         raise ValueError("Invalid unicode escape")
                     chars.append(chr(int(hex_str, 16)))
@@ -143,7 +148,7 @@ class JSONPositionParser:
     def _parse_number(self) -> Union[int, float]:
         """Parses a JSON number using standard regex pattern."""
         match = re.match(
-            r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", self.text[self.pos :]
+            r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", self.text[self.pos:]
         )
         if not match:
             line, col = self._get_line_col(self.pos)
@@ -174,7 +179,7 @@ class JSONPositionParser:
             if char == "]":
                 self.pos += 1
                 break
-            elif char == ",":
+            if char == ",":
                 self.pos += 1
                 idx += 1
             else:
@@ -187,7 +192,7 @@ class JSONPositionParser:
     def _parse_object(
         self, path: Tuple[Union[str, int], ...]
     ) -> Dict[str, Any]:
-        """Parses a JSON object, checking for duplicates and tracking key positions."""
+        """Parses a JSON object, checking for duplicates and tracking keys."""
         self.pos += 1  # skip '{'
         result: Dict[str, Any] = {}
         self._skip_whitespace()
@@ -202,7 +207,8 @@ class JSONPositionParser:
 
             if self.pos >= self.length or self.text[self.pos] != '"':
                 raise ValueError(
-                    f"Expected string key in object at line {key_line}, col {key_col}"
+                    f"Expected string key in object at line {key_line}, "
+                    f"col {key_col}"
                 )
 
             key = self._parse_string()
@@ -219,7 +225,8 @@ class JSONPositionParser:
             val = self._parse_value(path + (key,))
             if key in result:
                 raise ValueError(
-                    f"Duplicate key {key!r} in object at line {key_line}, col {key_col}"
+                    f"Duplicate key {key!r} in object at line {key_line}, "
+                    f"col {key_col}"
                 )
             result[key] = val
 
@@ -230,7 +237,7 @@ class JSONPositionParser:
             if char == "}":
                 self.pos += 1
                 break
-            elif char == ",":
+            if char == ",":
                 self.pos += 1
             else:
                 line, col = self._get_line_col(self.pos)
@@ -258,19 +265,24 @@ def parse_yaml_with_positions(
 
     positions: Dict[Tuple[Union[str, int], ...], Tuple[int, int]] = {}
 
-    def construct_and_track(node: yaml.Node, path: Tuple[Union[str, int], ...] = ()) -> Any:
+    def construct_and_track(
+        node: yaml.Node, path: Tuple[Union[str, int], ...] = ()
+    ) -> Any:
         if node.start_mark:
-            positions[path] = (node.start_mark.line + 1, node.start_mark.column + 1)
+            positions[path] = (
+                node.start_mark.line + 1,
+                node.start_mark.column + 1,
+            )
 
         if isinstance(node, ScalarNode):
             return loader.construct_object(node)
-        elif isinstance(node, SequenceNode):
+        if isinstance(node, SequenceNode):
             result = []
             for idx, item_node in enumerate(node.value):
                 val = construct_and_track(item_node, path + (idx,))
                 result.append(val)
             return result
-        elif isinstance(node, MappingNode):
+        if isinstance(node, MappingNode):
             result: Dict[str, Any] = {}
             for key_node, value_node in node.value:
                 key = loader.construct_object(key_node)
@@ -284,7 +296,8 @@ def parse_yaml_with_positions(
                     line = key_node.start_mark.line + 1
                     col = key_node.start_mark.column + 1
                     raise ValueError(
-                        f"Duplicate key {key!r} in YAML mapping at line {line}, col {col}"
+                        f"Duplicate key {key!r} in YAML mapping "
+                        f"at line {line}, col {col}"
                     )
 
                 val = construct_and_track(value_node, path + (key,))
@@ -344,41 +357,43 @@ def format_error_with_context(
     validator: str,
     no_color: bool = False,
 ) -> str:
-    """Formats a validation error with file context and standard compiler-like pointers."""
+    """Formats a validation error with file context and diagnostic pointers."""
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
     lines = file_content.splitlines()
     total_lines = len(lines)
 
     # ANSI coloring configurations
-    RED = "" if no_color else "\033[91m"
-    BLUE = "" if no_color else "\033[94m"
-    BOLD = "" if no_color else "\033[1m"
-    RESET = "" if no_color else "\033[0m"
+    red = "" if no_color else "\033[91m"
+    blue = "" if no_color else "\033[94m"
+    bold = "" if no_color else "\033[1m"
+    reset = "" if no_color else "\033[0m"
 
     result = []
     result.append(
-        f"{RED}{BOLD}Validation Error [{validator}]{RESET}: {BOLD}{message}{RESET}"
+        f"{red}{bold}Validation Error [{validator}]{reset}: {bold}{message}{reset}"
     )
-    result.append(f"  {BLUE}-->{RESET} {filename}:{line}:{col}")
+    result.append(f"  {blue}-->{reset} {filename}:{line}:{col}")
 
     # Set snippet range (1 line before, target line, 1 line after)
     start_line = max(1, line - 1)
     end_line = min(total_lines, line + 1)
     width = len(str(end_line))
 
-    result.append(f"   {BLUE}{' ' * width} |{RESET}")
+    result.append(f"   {blue}{' ' * width} |{reset}")
     for l_num in range(start_line, end_line + 1):
         if l_num > total_lines:
             break
         l_content = lines[l_num - 1]
         if l_num == line:
-            result.append(f" {BLUE}{l_num:>{width}} |{RESET} {l_content}")
+            result.append(f" {blue}{l_num:>{width}} |{reset} {l_content}")
             indent = " " * max(0, col - 1)
             result.append(
-                f"   {BLUE}{' ' * width} |{RESET} {indent}{RED}^{RESET} {RED}{message}{RESET}"
+                f"   {blue}{' ' * width} |{reset} {indent}{red}^{reset} "
+                f"{red}{message}{reset}"
             )
         else:
-            result.append(f" {BLUE}{l_num:>{width}} |{RESET} {l_content}")
-    result.append(f"   {BLUE}{' ' * width} |{RESET}")
+            result.append(f" {blue}{l_num:>{width}} |{reset} {l_content}")
+    result.append(f"   {blue}{' ' * width} |{reset}")
     return "\n".join(result)
 
 
@@ -390,19 +405,19 @@ def parse_and_track(
     if ext == ".json":
         parser = JSONPositionParser(content)
         return parser.parse()
-    elif ext in (".yaml", ".yml"):
+    if ext in (".yaml", ".yml"):
         return parse_yaml_with_positions(content)
-    else:
-        # Fallback parsing (try JSON first, then YAML)
-        try:
-            parser = JSONPositionParser(content)
-            return parser.parse()
-        except ValueError:
-            return parse_yaml_with_positions(content)
+
+    # Fallback parsing (try JSON first, then YAML)
+    try:
+        parser = JSONPositionParser(content)
+        return parser.parse()
+    except ValueError:
+        return parse_yaml_with_positions(content)
 
 
 def load_schema(schema_path: str) -> Tuple[Any, str]:
-    """Loads a schema file from the given path, returning the data and raw content."""
+    """Loads a schema file from the given path, returning data and raw content."""
     with open(schema_path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -410,7 +425,7 @@ def load_schema(schema_path: str) -> Tuple[Any, str]:
     try:
         data, _ = parse_and_track(schema_path, content)
         return data, content
-    except Exception as e:
+    except (ValueError, yaml.YAMLError) as e:
         raise RuntimeError(f"Failed to parse schema file {schema_path}: {e}") from e
 
 
@@ -424,29 +439,28 @@ def validate_config(
 
     Returns a list of formatted validation error strings.
     """
-    import jsonschema
-    from jsonschema.validators import validator_for
-
+    # pylint: disable=too-many-locals
     formatted_errors = []
 
     # Read config file content
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             content = f.read()
-    except Exception as e:
+    except OSError as e:
         return [f"Failed to read configuration file {config_path}: {e}"]
 
     # Parse config file content with position tracking
     try:
         data, positions = parse_and_track(config_path, content)
-    except Exception as e:
+    except (ValueError, yaml.YAMLError) as e:
         # Handle parse/syntax errors with line positions if possible
         line, col = 1, 1
         message = str(e)
-        if hasattr(e, "problem_mark") and e.problem_mark:
-            line = e.problem_mark.line + 1
-            col = e.problem_mark.column + 1
-        elif "line" in message and "col" in message:
+        problem_mark = getattr(e, "problem_mark", None)
+        if problem_mark:
+            line = problem_mark.line + 1
+            col = problem_mark.column + 1
+        else:
             # Attempt to extract line and column from the error message
             match = re.search(r"line (\d+), col (\d+)", message)
             if match:
@@ -472,7 +486,7 @@ def validate_config(
     try:
         validator_cls = validator_for(schema_data)
         validator = validator_cls(schema_data)
-    except Exception as e:
+    except (jsonschema.exceptions.SchemaError, ValueError) as e:
         return [f"Invalid JSON Schema setup: {e}"]
 
     # Run validation
@@ -499,7 +513,7 @@ def validate_config(
 def main() -> None:
     """The main entry point for the config validator CLI."""
     parser = argparse.ArgumentParser(
-        description="JSON/YAML Config Validator with highly readable compilation errors."
+        description="JSON/YAML Config Validator with highly readable linter errors."
     )
     parser.add_argument(
         "-s",
@@ -536,35 +550,31 @@ def main() -> None:
             sys.exit(2)
 
     # Load and validate the schema itself first
+    schema_content = ""
     try:
         schema_data, schema_content = load_schema(args.schema)
-        from jsonschema.validators import validator_for
-
         validator_cls = validator_for(schema_data)
         validator_cls.check_schema(schema_data)
-    except Exception as e:
-        # If it's a validation error inside the schema itself, format it nicely!
-        import jsonschema
-
-        if isinstance(e, jsonschema.exceptions.SchemaError):
-            # Parse the schema file again to track positions
-            try:
-                _, schema_positions = parse_and_track(args.schema, schema_content)
-                line, col = locate_error_position(e, schema_positions)
-                formatted_err = format_error_with_context(
-                    args.schema,
-                    schema_content,
-                    line,
-                    col,
-                    e.message,
-                    f"SchemaError: {e.validator}",
-                    no_color=args.no_color,
-                )
-                print(formatted_err, file=sys.stderr)
-            except Exception:
-                logger.error("Schema is invalid: %s", e)
-        else:
-            logger.error("Failed to compile schema: %s", e)
+    except jsonschema.exceptions.SchemaError as e:
+        # Parse the schema file again to track positions
+        try:
+            _, schema_positions = parse_and_track(args.schema, schema_content)
+            line, col = locate_error_position(e, schema_positions)
+            formatted_err = format_error_with_context(
+                args.schema,
+                schema_content,
+                line,
+                col,
+                e.message,
+                f"SchemaError: {e.validator}",
+                no_color=args.no_color,
+            )
+            print(formatted_err, file=sys.stderr)
+        except (ValueError, yaml.YAMLError, RuntimeError):
+            logger.error("Schema is invalid: %s", e)
+        sys.exit(2)
+    except (OSError, RuntimeError) as e:
+        logger.error("Failed to compile schema: %s", e)
         sys.exit(2)
 
     # Validate configuration files
