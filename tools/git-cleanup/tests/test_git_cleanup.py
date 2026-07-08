@@ -1,20 +1,14 @@
 """Tests for git_cleanup.py."""
 
-import os
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,subprocess-run-check
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from git_cleanup import (
-    LargeFile,
-    StaleBranch,
-    SecretFinding,
-    CleanupReport,
+from git_cleanup import (  # noqa: E402
     shannon_entropy,
     find_large_files,
     scan_commits_for_secrets,
@@ -55,19 +49,20 @@ class TestFindLargeFiles:
         subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         subprocess.run(
             ["git", "config", "user.name", "Test"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         # Create a large file (600 KB)
         big = tmp_path / "big.bin"
         big.write_bytes(b"x" * 600 * 1024)
         subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
-            ["git", "commit", "-m", "init"],
-            cwd=str(tmp_path), capture_output=True
+            ["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True
         )
 
         results = find_large_files(str(tmp_path), 500)
@@ -78,18 +73,19 @@ class TestFindLargeFiles:
         subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
             ["git", "config", "user.email", "test@test.com"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         subprocess.run(
             ["git", "config", "user.name", "Test"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         small = tmp_path / "small.txt"
         small.write_text("hello")
         subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
-            ["git", "commit", "-m", "init"],
-            cwd=str(tmp_path), capture_output=True
+            ["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True
         )
 
         results = find_large_files(str(tmp_path), 500)
@@ -104,21 +100,24 @@ class TestScanCommitsForSecrets:
         subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
             ["git", "config", "user.email", "t@t.com"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         subprocess.run(
-            ["git", "config", "user.name", "T"],
-            cwd=str(tmp_path), capture_output=True
+            ["git", "config", "user.name", "T"], cwd=str(tmp_path), capture_output=True
         )
         secret_file = tmp_path / "config.py"
         secret_file.write_text('AWS_KEY = "AKIAIOSFODNN7EXAMPLE"\n')
         subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
             ["git", "commit", "-m", "add config"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
 
-        findings = scan_commits_for_secrets(str(tmp_path), max_commits=10, entropy_threshold=4.5)
+        findings = scan_commits_for_secrets(
+            str(tmp_path), max_commits=10, entropy_threshold=4.5
+        )
         pattern_names = [f.pattern_name for f in findings]
         assert "AWS Access Key" in pattern_names
 
@@ -126,21 +125,24 @@ class TestScanCommitsForSecrets:
         subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
             ["git", "config", "user.email", "t@t.com"],
-            cwd=str(tmp_path), capture_output=True
+            cwd=str(tmp_path),
+            capture_output=True,
         )
         subprocess.run(
-            ["git", "config", "user.name", "T"],
-            cwd=str(tmp_path), capture_output=True
+            ["git", "config", "user.name", "T"], cwd=str(tmp_path), capture_output=True
         )
         clean = tmp_path / "readme.md"
         clean.write_text("# Hello World\nThis is a clean file.\n")
         subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
         subprocess.run(
-            ["git", "commit", "-m", "init"],
-            cwd=str(tmp_path), capture_output=True
+            ["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True
         )
 
-        findings = scan_commits_for_secrets(str(tmp_path), max_commits=10, entropy_threshold=4.5)
+        findings = scan_commits_for_secrets(
+            str(tmp_path), max_commits=10, entropy_threshold=4.5
+        )
         # Filter out high-entropy false positives from normal text
-        secret_findings = [f for f in findings if f.pattern_name != "High-Entropy Token"]
+        secret_findings = [
+            f for f in findings if f.pattern_name != "High-Entropy Token"
+        ]
         assert secret_findings == []

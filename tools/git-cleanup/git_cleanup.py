@@ -17,7 +17,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from pathlib import Path
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
 from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -32,10 +32,19 @@ DEFAULT_ENTROPY_THRESHOLD: float = 4.5
 # Secret patterns (value-only, not key names) — high-signal, low FP
 SECRET_PATTERNS: List[Tuple[str, re.Pattern]] = [
     ("AWS Access Key", re.compile(r"AKIA[0-9A-Z]{16}")),
-    ("AWS Secret Key", re.compile(r"(?i)aws.{0,20}secret.{0,20}['\"][0-9a-zA-Z/+]{40}['\"]")),
-    ("Generic API Key", re.compile(r"(?i)api[_-]?key\s*[:=]\s*['\"][0-9a-zA-Z\-_]{20,}['\"]")),
+    (
+        "AWS Secret Key",
+        re.compile(r"(?i)aws.{0,20}secret.{0,20}['\"][0-9a-zA-Z/+]{40}['\"]"),
+    ),
+    (
+        "Generic API Key",
+        re.compile(r"(?i)api[_-]?key\s*[:=]\s*['\"][0-9a-zA-Z\-_]{20,}['\"]"),
+    ),
     ("Bearer Token", re.compile(r"Bearer\s+[A-Za-z0-9\-_]{20,}")),
-    ("Private Key Header", re.compile(r"-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----")),
+    (
+        "Private Key Header",
+        re.compile(r"-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----"),
+    ),
     ("GitHub Token", re.compile(r"gh[pousr]_[A-Za-z0-9]{36,}")),
     ("Generic Password", re.compile(r"(?i)password\s*[:=]\s*['\"][^'\"]{8,}['\"]")),
     ("Slack Token", re.compile(r"xox[baprs]-[0-9A-Za-z\-]{10,}")),
@@ -196,9 +205,7 @@ def find_large_files(repo_path: str, threshold_kb: int) -> List[LargeFile]:
     Returns:
         List of LargeFile objects sorted by size descending.
     """
-    result = run_git(
-        ["ls-files", "-z"], repo_path
-    )
+    result = run_git(["ls-files", "-z"], repo_path)
     files = [f for f in result.stdout.split("\0") if f]
     large: List[LargeFile] = []
     for rel_path in files:
@@ -227,13 +234,17 @@ def find_stale_branches(repo_path: str, stale_days: int) -> List[StaleBranch]:
     """
     # Get merged branches
     merged_result = run_git(
-        ["branch", "--merged", "HEAD", "--format=%(refname:short)"], repo_path, check=False
+        ["branch", "--merged", "HEAD", "--format=%(refname:short)"],
+        repo_path,
+        check=False,
     )
     merged_names = set(merged_result.stdout.strip().splitlines())
 
     # Get all local branches with their last commit date
     all_result = run_git(
-        ["branch", "--format=%(refname:short)%09%(committerdate:iso8601)"], repo_path, check=False
+        ["branch", "--format=%(refname:short)%09%(committerdate:iso8601)"],
+        repo_path,
+        check=False,
     )
 
     stale: List[StaleBranch] = []
@@ -380,7 +391,10 @@ def scan_commits_for_secrets(
                                 file_path=current_file,
                                 line_number=line_num,
                                 pattern_name="High-Entropy Token",
-                                snippet=f"token={token[:6]}***REDACTED*** (entropy={entropy:.2f})",
+                                snippet=(
+                                    f"token={token[:6]}***REDACTED*** "
+                                    f"(entropy={entropy:.2f})"
+                                ),
                             )
                         )
                         seen_keys.add(key)
@@ -401,7 +415,7 @@ def print_report(report: CleanupReport, args: argparse.Namespace) -> None:
         args: Parsed CLI arguments (used for threshold context).
     """
     print(f"\n{'=' * 60}")
-    print(f"  Git Repo Cleanup Report")
+    print("  Git Repo Cleanup Report")
     print(f"  Repository: {report.repo_path}")
     print(f"{'=' * 60}\n")
 
@@ -456,14 +470,15 @@ def print_report(report: CleanupReport, args: argparse.Namespace) -> None:
     if report.secret_findings:
         for s in report.secret_findings:
             print(
-                f"  ⚠ [{s.pattern_name}] commit={s.commit} file={s.file_path}:{s.line_number}"
+                f"  ⚠ [{s.pattern_name}] commit={s.commit} "
+                f"file={s.file_path}:{s.line_number}"
             )
             print(f"      {s.snippet}")
     else:
         print("  ✅ No obvious secrets detected.")
     print()
     print(f"{'=' * 60}")
-    print(f"  Summary:")
+    print("  Summary:")
     print(f"    Large files        : {len(report.large_files)}")
     print(f"    Stale branches     : {len(report.stale_branches)}")
     print(f"    Untracked files    : {len(report.untracked_files)}")
@@ -487,7 +502,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         Parsed namespace.
     """
     parser = argparse.ArgumentParser(
-        description="Git Repo Cleanup Tool — find bloat, stale branches, junk, and secrets.",
+        description=(
+            "Git Repo Cleanup Tool — find bloat, stale branches, "
+            "junk, and secrets."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -506,14 +524,20 @@ Examples:
         type=int,
         default=DEFAULT_LARGE_FILE_KB,
         metavar="KB",
-        help=f"Flag files larger than this size in KB (default: {DEFAULT_LARGE_FILE_KB}).",
+        help=(
+            "Flag files larger than this size in KB "
+            f"(default: {DEFAULT_LARGE_FILE_KB})."
+        ),
     )
     parser.add_argument(
         "--stale-days",
         type=int,
         default=DEFAULT_STALE_DAYS,
         metavar="DAYS",
-        help=f"Flag branches inactive for this many days (default: {DEFAULT_STALE_DAYS}).",
+        help=(
+            "Flag branches inactive for this many days "
+            f"(default: {DEFAULT_STALE_DAYS})."
+        ),
     )
     parser.add_argument(
         "--max-commits",
@@ -527,7 +551,10 @@ Examples:
         type=float,
         default=DEFAULT_ENTROPY_THRESHOLD,
         metavar="FLOAT",
-        help=f"Shannon entropy threshold for secret detection (default: {DEFAULT_ENTROPY_THRESHOLD}).",
+        help=(
+            "Shannon entropy threshold for secret detection "
+            f"(default: {DEFAULT_ENTROPY_THRESHOLD})."
+        ),
     )
     parser.add_argument(
         "--skip-secrets",
