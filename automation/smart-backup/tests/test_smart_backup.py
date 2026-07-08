@@ -1,17 +1,15 @@
 """Tests for smart_backup.py."""
 
-import json
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,unused-import
 import os
 import sys
 import time
 from pathlib import Path
-from unittest.mock import patch
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from smart_backup import (
+from smart_backup import (  # noqa: E402
     BackupManifest,
     FileRecord,
     compute_checksum,
@@ -19,7 +17,6 @@ from smart_backup import (
     load_manifest,
     save_manifest,
     collect_source_files,
-    should_copy,
     run_backup,
     verify_backup,
 )
@@ -53,7 +50,9 @@ class TestComputeChecksum:
         f2 = tmp_path / "b.txt"
         f1.write_text("content A")
         f2.write_text("content B")
-        assert compute_checksum(str(f1), "sha256") != compute_checksum(str(f2), "sha256")
+        assert compute_checksum(str(f1), "sha256") != compute_checksum(
+            str(f2), "sha256"
+        )
 
 
 # ---------------------------------------------------------------------------

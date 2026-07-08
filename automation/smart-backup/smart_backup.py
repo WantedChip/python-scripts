@@ -7,7 +7,8 @@ and post-backup integrity verification.
 """
 
 import argparse
-import csv
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+import fnmatch
 import hashlib
 import json
 import logging
@@ -15,7 +16,6 @@ import os
 import re
 import shutil
 import sys
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -149,8 +149,6 @@ def matches_exclusion(rel_path: str, patterns: List[str]) -> bool:
     Returns:
         True if the path should be excluded.
     """
-    import fnmatch
-
     for pattern in patterns:
         # Match against filename or full relative path
         if fnmatch.fnmatch(os.path.basename(rel_path), pattern):
@@ -217,7 +215,8 @@ def collect_source_files(
     for dirpath, dirnames, filenames in os.walk(source, topdown=True):
         # Prune excluded directories in-place
         dirnames[:] = [
-            d for d in dirnames
+            d
+            for d in dirnames
             if not matches_exclusion(
                 os.path.relpath(os.path.join(dirpath, d), source).replace("\\", "/"),
                 exclude_patterns,
@@ -245,7 +244,7 @@ def should_copy(
         src_abs: Absolute source file path.
         rel_path: Relative path (used for manifest lookup).
         dest_abs: Absolute destination file path.
-        previous: Dict of rel_path → FileRecord from previous backup.
+        previous: Dict of rel_path -> FileRecord from previous backup.
         mode: 'mtime' or 'checksum'.
         algo: Hash algorithm for checksum mode.
 
@@ -264,10 +263,11 @@ def should_copy(
 
     if mode == "mtime":
         return src_mtime != prev.mtime or src_size != prev.size_bytes
-    else:  # checksum
-        if src_mtime == prev.mtime and src_size == prev.size_bytes:
-            return False  # Assume unchanged for speed
-        return compute_checksum(src_abs, algo) != prev.checksum
+
+    # checksum
+    if src_mtime == prev.mtime and src_size == prev.size_bytes:
+        return False  # Assume unchanged for speed
+    return compute_checksum(src_abs, algo) != prev.checksum
 
 
 def run_backup(
@@ -328,14 +328,20 @@ def run_backup(
                 else:
                     skipped += 1
                 # Still record to manifest for dry-run completeness
-                checksum = prev_manifest.files[0].checksum if not needs_copy and previous.get(rel_path) else ""
-                manifest.files.append(FileRecord(
-                    rel_path=rel_path,
-                    size_bytes=src_size,
-                    mtime=src_mtime,
-                    checksum=checksum,
-                    algo=algo,
-                ))
+                checksum = (
+                    prev_manifest.files[0].checksum
+                    if not needs_copy and previous.get(rel_path)
+                    else ""
+                )
+                manifest.files.append(
+                    FileRecord(
+                        rel_path=rel_path,
+                        size_bytes=src_size,
+                        mtime=src_mtime,
+                        checksum=checksum,
+                        algo=algo,
+                    )
+                )
                 continue
 
             if needs_copy:
@@ -349,13 +355,15 @@ def run_backup(
                 checksum = previous[rel_path].checksum if rel_path in previous else ""
                 skipped += 1
 
-            manifest.files.append(FileRecord(
-                rel_path=rel_path,
-                size_bytes=src_size,
-                mtime=src_mtime,
-                checksum=checksum,
-                algo=algo,
-            ))
+            manifest.files.append(
+                FileRecord(
+                    rel_path=rel_path,
+                    size_bytes=src_size,
+                    mtime=src_mtime,
+                    checksum=checksum,
+                    algo=algo,
+                )
+            )
 
         except OSError as exc:
             logger.error("Error backing up '%s': %s", rel_path, exc)
@@ -411,8 +419,12 @@ def verify_backup(destination: str, algo: str) -> bool:
             if actual == record.checksum:
                 ok += 1
             else:
-                logger.error("MISMATCH: %s (expected %s, got %s)",
-                             record.rel_path, record.checksum[:12], actual[:12])
+                logger.error(
+                    "MISMATCH: %s (expected %s, got %s)",
+                    record.rel_path,
+                    record.checksum[:12],
+                    actual[:12],
+                )
                 failed += 1
         except OSError as exc:
             logger.error("Cannot read '%s': %s", record.rel_path, exc)
@@ -483,7 +495,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         Parsed namespace.
     """
     parser = argparse.ArgumentParser(
-        description="Smart Backup Script — incremental backups with checksums and verification.",
+        description=(
+            "Smart Backup Script — incremental backups with checksums "
+            "and verification."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -495,12 +510,17 @@ Examples:
 """,
     )
     parser.add_argument("--source", metavar="DIR", help="Source directory to back up.")
-    parser.add_argument("--dest", required=True, metavar="DIR", help="Backup destination directory.")
+    parser.add_argument(
+        "--dest", required=True, metavar="DIR", help="Backup destination directory."
+    )
     parser.add_argument(
         "--mode",
         choices=["mtime", "checksum"],
         default="mtime",
-        help="Comparison mode: 'mtime' (fast) or 'checksum' (reliable). Default: mtime.",
+        help=(
+            "Comparison mode: 'mtime' (fast) or 'checksum' (reliable). "
+            "Default: mtime."
+        ),
     )
     parser.add_argument(
         "--algo",
@@ -567,7 +587,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         if not args.dry_run:
             os.makedirs(dest, exist_ok=True)
 
-        manifest = run_backup(
+        run_backup(
             source=source,
             destination=dest,
             exclude_patterns=args.exclude,
@@ -581,7 +601,10 @@ def main(argv: Optional[List[str]] = None) -> None:
             if not ok:
                 sys.exit(1)
     elif not args.apply_retention:
-        logger.error("Specify --source for a backup run, or --apply-retention to clean old backups.")
+        logger.error(
+            "Specify --source for a backup run, or --apply-retention "
+            "to clean old backups."
+        )
         sys.exit(1)
 
 
