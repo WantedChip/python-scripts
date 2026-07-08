@@ -12,9 +12,10 @@ import json
 import logging
 import os
 import sys
+# pylint: disable=too-many-locals
+import fnmatch
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -85,9 +86,7 @@ class Snapshot:
             algo=data.get("algo", DEFAULT_ALGO),
             label=data.get("label", ""),
         )
-        snap.files = {
-            k: FileEntry(**v) for k, v in data.get("files", {}).items()
-        }
+        snap.files = {k: FileEntry(**v) for k, v in data.get("files", {}).items()}
         return snap
 
 
@@ -153,8 +152,6 @@ def take_snapshot(
     Returns:
         Populated Snapshot object.
     """
-    import fnmatch
-
     snap = Snapshot(
         root=root,
         timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -165,10 +162,9 @@ def take_snapshot(
     for dirpath, dirnames, filenames in os.walk(root, topdown=True):
         # Prune excluded directories
         dirnames[:] = [
-            d for d in dirnames
-            if not any(
-                fnmatch.fnmatch(d, pat) for pat in exclude_patterns
-            )
+            d
+            for d in dirnames
+            if not any(fnmatch.fnmatch(d, pat) for pat in exclude_patterns)
         ]
 
         for filename in filenames:
@@ -330,7 +326,11 @@ def print_diff(result: DiffResult, verbose: bool) -> None:
         for o, n in sorted(result.modified, key=lambda x: x[0].rel_path):
             size_delta = n.size_bytes - o.size_bytes
             sign = "+" if size_delta >= 0 else ""
-            print(f"    ~ {o.rel_path}  ({_human(o.size_bytes)} → {_human(n.size_bytes)}, {sign}{_human(abs(size_delta))})")
+            print(
+                f"    ~ {o.rel_path}  "
+                f"({_human(o.size_bytes)} → {_human(n.size_bytes)}, "
+                f"{sign}{_human(abs(size_delta))})"
+            )
     else:
         print("  ✏  Modified: none")
 
@@ -368,7 +368,10 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         Parsed namespace.
     """
     parser = argparse.ArgumentParser(
-        description="Folder Snapshot + Diff Tool — record directory state and compare changes.",
+        description=(
+            "Folder Snapshot + Diff Tool — record directory state "
+            "and compare changes."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commands:
@@ -433,7 +436,10 @@ Examples:
     diff_parser.add_argument(
         "--live",
         action="store_true",
-        help="Compare the old snapshot against the current live state of its directory.",
+        help=(
+            "Compare the old snapshot against the current live state "
+            "of its directory."
+        ),
     )
     diff_parser.add_argument(
         "--algo",
@@ -497,7 +503,10 @@ def main(argv: Optional[List[str]] = None) -> None:
             logger.error("Specify either --new FILE or --live.")
             sys.exit(1)
 
-        print(f"\nDiff: '{old_snap.label or args.old}' → '{new_snap.label or getattr(args, 'new', 'live')}'")
+        print(
+            f"\nDiff: '{old_snap.label or args.old}' → "
+            f"'{new_snap.label or getattr(args, 'new', 'live')}'"
+        )
         print(f"  Old: {old_snap.timestamp} ({len(old_snap.files)} files)")
         print(f"  New: {new_snap.timestamp} ({len(new_snap.files)} files)")
 

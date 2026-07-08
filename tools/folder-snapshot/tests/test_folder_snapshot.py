@@ -1,19 +1,15 @@
 """Tests for folder_snapshot.py."""
 
-import json
-import os
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,unused-import,too-few-public-methods
 import sys
-import time
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from folder_snapshot import (
+from folder_snapshot import (  # noqa: E402
     FileEntry,
     Snapshot,
-    DiffResult,
     compute_checksum,
     take_snapshot,
     save_snapshot,
@@ -38,7 +34,9 @@ class TestComputeChecksum:
         f2 = tmp_path / "b.txt"
         f1.write_text("aaa")
         f2.write_text("bbb")
-        assert compute_checksum(str(f1), "sha256") != compute_checksum(str(f2), "sha256")
+        assert compute_checksum(str(f1), "sha256") != compute_checksum(
+            str(f2), "sha256"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -76,8 +74,12 @@ class TestTakeSnapshot:
 # ---------------------------------------------------------------------------
 class TestSnapshotIO:
     def test_roundtrip(self, tmp_path: Path) -> None:
-        snap = Snapshot(root="/src", timestamp="2026-01-01T00:00:00Z", algo="sha256", label="test")
-        snap.files["a.txt"] = FileEntry(rel_path="a.txt", size_bytes=100, mtime=1234.5, checksum="abc")
+        snap = Snapshot(
+            root="/src", timestamp="2026-01-01T00:00:00Z", algo="sha256", label="test"
+        )
+        snap.files["a.txt"] = FileEntry(
+            rel_path="a.txt", size_bytes=100, mtime=1234.5, checksum="abc"
+        )
         path = str(tmp_path / "snap.json")
         save_snapshot(snap, path)
         loaded = load_snapshot(path)
@@ -96,7 +98,9 @@ class TestDiffSnapshots:
             snap.files[rel] = entry
         return snap
 
-    def _entry(self, rel: str, size: int = 100, mtime: float = 1000.0, checksum: str = "abc") -> FileEntry:
+    def _entry(
+        self, rel: str, size: int = 100, mtime: float = 1000.0, checksum: str = "abc"
+    ) -> FileEntry:
         return FileEntry(rel_path=rel, size_bytes=size, mtime=mtime, checksum=checksum)
 
     def test_added_file(self) -> None:
