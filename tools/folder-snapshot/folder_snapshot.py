@@ -13,7 +13,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, asdict, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -157,7 +157,7 @@ def take_snapshot(
 
     snap = Snapshot(
         root=root,
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         algo=algo,
         label=label,
     )

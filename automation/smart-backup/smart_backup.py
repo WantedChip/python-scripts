@@ -17,7 +17,7 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -301,7 +301,7 @@ def run_backup(
     files = collect_source_files(source, exclude_patterns)
     logger.info("Found %d source files to check.", len(files))
 
-    timestamp = datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     manifest = BackupManifest(
         timestamp=timestamp,
         source=source,

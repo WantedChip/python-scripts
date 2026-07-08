@@ -91,8 +91,12 @@ class TestInferType:
         assert infer_type([]) == "string"
 
     def test_mixed_mostly_int(self) -> None:
-        # 9/10 = 90% int → should be int
-        assert infer_type(["1", "2", "3", "4", "5", "6", "7", "8", "9", "hello"]) == "string"
+        # 9/10 = 90% int — exceeds the 80% threshold → infer_type returns 'int'
+        assert infer_type(["1", "2", "3", "4", "5", "6", "7", "8", "9", "hello"]) == "int"
+
+    def test_mixed_below_threshold(self) -> None:
+        # 5/10 = 50% int — below the 80% threshold → falls back to 'string'
+        assert infer_type(["1", "2", "3", "4", "5", "a", "b", "c", "d", "e"]) == "string"
 
 
 # ---------------------------------------------------------------------------
