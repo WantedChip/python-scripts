@@ -111,6 +111,7 @@ def human_readable(size_bytes: int) -> str:
     return f"{size_bytes:.2f} PB"
 
 
+# pylint: disable=too-many-locals
 def scan_directory(
     root: str,
     top_n: int,
@@ -162,7 +163,9 @@ def scan_directory(
         for i in range(len(parts)):
             ancestor = str(Path(*parts[: i + 1]))
             dir_sizes[ancestor] = dir_sizes.get(ancestor, 0) + dir_bytes
-            dir_file_counts[ancestor] = dir_file_counts.get(ancestor, 0) + len(filenames)
+            dir_file_counts[ancestor] = dir_file_counts.get(ancestor, 0) + len(
+                filenames
+            )
 
     # Top files by size
     all_files.sort(key=lambda f: f.size_bytes, reverse=True)
@@ -208,23 +211,33 @@ def print_report(result: ScanResult, args: argparse.Namespace) -> None:
     print(f"\n{'=' * 65}")
     print("  Disk Space Investigator")
     print(f"  Root      : {result.root}")
-    print(f"  Total     : {human_readable(result.total_bytes)}  ({result.total_files:,} files)")
+    print(
+        f"  Total     : {human_readable(result.total_bytes)}  "
+        f"({result.total_files:,} files)"
+    )
     print(f"{'=' * 65}\n")
 
-    print(f"── Top {len(result.top_files)} Largest Files ─────────────────────────────────")
+    print(
+        f"── Top {len(result.top_files)} Largest Files "
+        "─────────────────────────────────"
+    )
     for f in result.top_files:
         rel = os.path.relpath(f.path, result.root)
         print(f"  {human_readable(f.size_bytes):>10}  {rel}")
     print()
 
-    print(f"── Top {len(result.top_dirs)} Largest Sub-directories ──────────────────────")
+    print(
+        f"── Top {len(result.top_dirs)} Largest Sub-directories ──────────────────────"
+    )
     for d in result.top_dirs:
         rel = os.path.relpath(d.path, result.root)
         print(f"  {human_readable(d.total_bytes):>10}  {rel}  ({d.file_count:,} files)")
     print()
 
     if result.large_files:
-        print(f"── Files Exceeding {args.large_file_mb} MB ──────────────────────────────")
+        print(
+            f"── Files Exceeding {args.large_file_mb} MB ──────────────────────────────"
+        )
         for f in result.large_files:
             rel = os.path.relpath(f.path, result.root)
             print(f"  ⚠  {human_readable(f.size_bytes):>10}  {rel}")
@@ -253,16 +266,18 @@ def export_report(result: ScanResult, output_path: str, fmt: str) -> None:
             "total_bytes": result.total_bytes,
             "total_files": result.total_files,
             "top_files": [
-                {"path": f.path, "size_bytes": f.size_bytes}
-                for f in result.top_files
+                {"path": f.path, "size_bytes": f.size_bytes} for f in result.top_files
             ],
             "top_dirs": [
-                {"path": d.path, "total_bytes": d.total_bytes, "file_count": d.file_count}
+                {
+                    "path": d.path,
+                    "total_bytes": d.total_bytes,
+                    "file_count": d.file_count,
+                }
                 for d in result.top_dirs
             ],
             "large_files": [
-                {"path": f.path, "size_bytes": f.size_bytes}
-                for f in result.large_files
+                {"path": f.path, "size_bytes": f.size_bytes} for f in result.large_files
             ],
             "extension_breakdown": result.extension_breakdown,
         }
@@ -274,17 +289,25 @@ def export_report(result: ScanResult, output_path: str, fmt: str) -> None:
             writer = csv.writer(fh)
             writer.writerow(["type", "path", "size_bytes", "size_human", "extra"])
             for f in result.top_files:
-                writer.writerow(["file", f.path, f.size_bytes, human_readable(f.size_bytes), ""])
+                writer.writerow(
+                    ["file", f.path, f.size_bytes, human_readable(f.size_bytes), ""]
+                )
             for d in result.top_dirs:
                 writer.writerow(
-                    ["dir", d.path, d.total_bytes, human_readable(d.total_bytes),
-                     f"files={d.file_count}"]
+                    [
+                        "dir",
+                        d.path,
+                        d.total_bytes,
+                        human_readable(d.total_bytes),
+                        f"files={d.file_count}",
+                    ]
                 )
 
     elif fmt == "txt":
         lines = [
             f"Root: {result.root}",
-            f"Total: {human_readable(result.total_bytes)} ({result.total_files:,} files)",
+            f"Total: {human_readable(result.total_bytes)} "
+            f"({result.total_files:,} files)",
             "",
             "Top Files:",
         ]
@@ -342,7 +365,10 @@ Examples:
         type=float,
         default=DEFAULT_LARGE_FILE_MB,
         metavar="MB",
-        help=f"Highlight files exceeding this size in MB (default: {DEFAULT_LARGE_FILE_MB}).",
+        help=(
+            "Highlight files exceeding this size in MB "
+            f"(default: {DEFAULT_LARGE_FILE_MB})."
+        ),
     )
     parser.add_argument(
         "--exclude",
@@ -362,9 +388,7 @@ Examples:
         default="json",
         help="Export format (default: json).",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Verbose logging."
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging.")
     return parser.parse_args(argv)
 
 
