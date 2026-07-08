@@ -38,8 +38,16 @@ category-name/script-name/
 
 | Category | Script | Description |
 |---|---|---|
-| `automation` | [downloads-organizer](file:///c:/Users/Lenovo/Downloads/Documents/workspace/python%20scripts/automation/downloads-organizer/) | Sorts files in a specified folder into organized category subfolders based on file extensions, patterns, dates, or custom rules. |
-| `tools` | [duplicate-finder](file:///c:/Users/Lenovo/Downloads/Documents/workspace/python%20scripts/tools/duplicate-finder/) | Scan directories recursively for duplicate files by content hash and optionally move them to quarantine. |
+| `automation` | [downloads-organizer](automation/downloads-organizer/) | Watches/scans a folder and sorts files into subfolders by extension, filename, date, or custom rules. |
+| `automation` | [smart-backup](automation/smart-backup/) | Incremental backups with checksums, exclusions, retention policies, verification, and dry-run mode. |
+| `checkers` | [link-checker](checkers/link-checker/) | Crawls a website or scans local Markdown/HTML files and reports dead links, redirects, and timeouts. |
+| `checkers` | [env-auditor](checkers/env-auditor/) | Compares `.env`, `.env.example`, Docker files, and source code to find missing or unused variables. |
+| `tools` | [duplicate-finder](tools/duplicate-finder/) | Scans directories for duplicate files by content hash and optionally moves them to quarantine. |
+| `tools` | [file-renamer](tools/file-renamer/) | Bulk rename with regex, numbering, date cleanup, preview mode, and full undo/rollback support. |
+| `tools` | [git-cleanup](tools/git-cleanup/) | Finds large files, stale branches, ignored junk, and accidentally committed secrets in a git repo. |
+| `tools` | [space-investigator](tools/space-investigator/) | Explains what consumes storage, detects unusually large folders, and exports a report. |
+| `tools` | [folder-snapshot](tools/folder-snapshot/) | Records a directory's state as a JSON snapshot and diffs two snapshots to show changes. |
+| `tools` | [csv-cleaner](tools/csv-cleaner/) | Detects encoding, delimiter, duplicates, malformed dates, empty columns, and type problems in CSVs. |
 
 ## Usage
 
