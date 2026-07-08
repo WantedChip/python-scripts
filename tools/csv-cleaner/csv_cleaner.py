@@ -6,19 +6,19 @@ malformed dates, empty/null columns, inconsistent headers, and type
 mismatches. Generates a cleaned output CSV based on CLI configuration.
 """
 
+# pylint: disable=import-error,too-many-instance-attributes,too-many-return-statements
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 import argparse
-import chardet
-import collections
 import csv
-import io
-import json
 import logging
 import os
 import re
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
+
+import chardet
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 DATE_PATTERNS = [
-    re.compile(r"^\d{4}-\d{2}-\d{2}$"),           # YYYY-MM-DD
-    re.compile(r"^\d{2}/\d{2}/\d{4}$"),            # DD/MM/YYYY or MM/DD/YYYY
-    re.compile(r"^\d{2}-\d{2}-\d{4}$"),            # DD-MM-YYYY
-    re.compile(r"^\d{4}/\d{2}/\d{2}$"),            # YYYY/MM/DD
-    re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}"), # ISO 8601 with time
+    re.compile(r"^\d{4}-\d{2}-\d{2}$"),  # YYYY-MM-DD
+    re.compile(r"^\d{2}/\d{2}/\d{4}$"),  # DD/MM/YYYY or MM/DD/YYYY
+    re.compile(r"^\d{2}-\d{2}-\d{4}$"),  # DD-MM-YYYY
+    re.compile(r"^\d{4}/\d{2}/\d{2}$"),  # YYYY/MM/DD
+    re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}"),  # ISO 8601 with time
 ]
 NULL_VALUES: Set[str] = {"", "null", "none", "na", "n/a", "nan", "#n/a", "-"}
 
@@ -49,7 +49,8 @@ class ColumnStats:
         total: Total number of rows.
         null_count: Number of null/empty values.
         unique_count: Number of unique non-null values.
-        detected_type: Inferred dominant type ('int', 'float', 'date', 'bool', 'string').
+        detected_type: Inferred dominant type ('int', 'float', 'date',
+            'bool', 'string').
         type_inconsistencies: Rows with values not matching the detected type.
         malformed_dates: Rows with values that look like dates but are malformed.
     """
@@ -264,7 +265,8 @@ def analyze_csv(path: str) -> Tuple[AnalysisReport, List[List[str]]]:
             report.header_issues.append(f"Column {i}: blank header name")
         elif stripped in seen_headers:
             report.header_issues.append(
-                f"Column {i}: duplicate header '{stripped}' (also at index {seen_headers[stripped]})"
+                f"Column {i}: duplicate header '{stripped}' "
+                f"(also at index {seen_headers[stripped]})"
             )
         else:
             seen_headers[stripped] = i
@@ -282,9 +284,10 @@ def analyze_csv(path: str) -> Tuple[AnalysisReport, List[List[str]]]:
     report.duplicate_rows.sort()
 
     # Per-column stats
-    n_cols = len(header)
     for col_idx, col_name in enumerate(header):
-        stats = ColumnStats(name=col_name.strip() or f"col_{col_idx}", total=len(data_rows))
+        stats = ColumnStats(
+            name=col_name.strip() or f"col_{col_idx}", total=len(data_rows)
+        )
         col_values: List[str] = []
 
         for row_idx, row in enumerate(data_rows, start=2):
@@ -366,14 +369,19 @@ def print_report(report: AnalysisReport) -> None:
 
     # Column type analysis
     print("── Column Statistics ─────────────────────────────────────")
-    header_fmt = f"  {'Column':<25} {'Type':<8} {'Nulls':>6} {'Unique':>7} {'Type Issues':>11}"
+    header_fmt = (
+        f"  {'Column':<25} {'Type':<8} {'Nulls':>6} {'Unique':>7} {'Type Issues':>11}"
+    )
     print(header_fmt)
     print("  " + "-" * 62)
     for stats in report.column_stats:
         null_pct = f"{stats.null_count}/{stats.total}"
         issues = len(stats.type_inconsistencies)
         issue_str = f"{issues} rows" if issues else "✅"
-        print(f"  {stats.name:<25} {stats.detected_type:<8} {null_pct:>6} {stats.unique_count:>7} {issue_str:>11}")
+        print(
+            f"  {stats.name:<25} {stats.detected_type:<8} {null_pct:>6} "
+            f"{stats.unique_count:>7} {issue_str:>11}"
+        )
     print()
 
 
@@ -407,17 +415,17 @@ def clean_csv(
 
     if drop_empty_cols:
         for i, col_name in enumerate(header):
-            if col_name.strip() in report.empty_columns or col_name in report.empty_columns:
+            if (
+                col_name.strip() in report.empty_columns
+                or col_name in report.empty_columns
+            ):
                 empty_col_indices.add(i)
 
     dup_set: Set[int] = set(report.duplicate_rows) if drop_duplicates else set()
 
-    clean_header = [
-        h for i, h in enumerate(header) if i not in empty_col_indices
-    ]
+    clean_header = [h for i, h in enumerate(header) if i not in empty_col_indices]
 
     clean_rows: List[List[str]] = []
-    seen_fps: Set[Tuple] = set()
 
     for row_idx, row in enumerate(data_rows, start=2):
         if row_idx in dup_set:
@@ -439,7 +447,10 @@ def clean_csv(
         writer.writerow(clean_header)
         writer.writerows(clean_rows)
 
-    print(f"✅ Cleaned CSV saved to '{output_path}' ({len(clean_rows)} rows, {len(clean_header)} columns).")
+    print(
+        f"✅ Cleaned CSV saved to '{output_path}' ({len(clean_rows)} rows, "
+        f"{len(clean_header)} columns)."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -468,7 +479,8 @@ Examples:
   python csv_cleaner.py --input data.csv --output clean.csv
 
   # Drop duplicates and empty columns, strip whitespace
-  python csv_cleaner.py --input data.csv --output clean.csv --drop-duplicates --drop-empty-cols --strip
+  python csv_cleaner.py --input data.csv --output clean.csv \\
+                        --drop-duplicates --drop-empty-cols --strip
 
   # Normalize null values and fix encoding
   python csv_cleaner.py --input data.csv --output clean.csv --normalize-nulls
@@ -478,7 +490,9 @@ Examples:
         "--input", required=True, metavar="FILE", help="Input CSV file path."
     )
     parser.add_argument(
-        "--output", metavar="FILE", help="Output cleaned CSV file (analysis-only if omitted)."
+        "--output",
+        metavar="FILE",
+        help="Output cleaned CSV file (analysis-only if omitted).",
     )
     parser.add_argument(
         "--drop-duplicates",
@@ -505,9 +519,7 @@ Examples:
         action="store_true",
         help="Exit code 1 if any data quality issues are found.",
     )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Verbose logging."
-    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging.")
     return parser.parse_args(argv)
 
 

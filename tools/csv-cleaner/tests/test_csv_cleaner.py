@@ -1,18 +1,14 @@
 """Tests for csv_cleaner.py."""
 
+# pylint: disable=wrong-import-position,import-error,missing-class-docstring
+# pylint: disable=missing-function-docstring,unused-import,unused-variable
 import csv
-import io
-import os
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from csv_cleaner import (
-    AnalysisReport,
-    ColumnStats,
+from csv_cleaner import (  # noqa: E402
     detect_delimiter,
     is_null,
     infer_type,
@@ -92,11 +88,15 @@ class TestInferType:
 
     def test_mixed_mostly_int(self) -> None:
         # 9/10 = 90% int — exceeds the 80% threshold → infer_type returns 'int'
-        assert infer_type(["1", "2", "3", "4", "5", "6", "7", "8", "9", "hello"]) == "int"
+        assert (
+            infer_type(["1", "2", "3", "4", "5", "6", "7", "8", "9", "hello"]) == "int"
+        )
 
     def test_mixed_below_threshold(self) -> None:
         # 5/10 = 50% int — below the 80% threshold → falls back to 'string'
-        assert infer_type(["1", "2", "3", "4", "5", "a", "b", "c", "d", "e"]) == "string"
+        assert (
+            infer_type(["1", "2", "3", "4", "5", "a", "b", "c", "d", "e"]) == "string"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -175,8 +175,15 @@ class TestCleanCsv:
         path = self._write_csv(tmp_path, "a,b\n1,2\n1,2\n3,4\n")
         report, rows = analyze_csv(path)
         out = str(tmp_path / "out.csv")
-        clean_csv(report, rows, out, drop_duplicates=True,
-                  drop_empty_cols=False, strip_whitespace=False, normalize_nulls=False)
+        clean_csv(
+            report,
+            rows,
+            out,
+            drop_duplicates=True,
+            drop_empty_cols=False,
+            strip_whitespace=False,
+            normalize_nulls=False,
+        )
         with open(out, encoding="utf-8") as fh:
             reader = csv.reader(fh)
             data = list(reader)
@@ -186,8 +193,15 @@ class TestCleanCsv:
         path = self._write_csv(tmp_path, "a,b\n  hello  ,  world  \n")
         report, rows = analyze_csv(path)
         out = str(tmp_path / "out.csv")
-        clean_csv(report, rows, out, drop_duplicates=False,
-                  drop_empty_cols=False, strip_whitespace=True, normalize_nulls=False)
+        clean_csv(
+            report,
+            rows,
+            out,
+            drop_duplicates=False,
+            drop_empty_cols=False,
+            strip_whitespace=True,
+            normalize_nulls=False,
+        )
         with open(out, encoding="utf-8") as fh:
             reader = csv.reader(fh)
             rows_out = list(reader)
@@ -198,8 +212,15 @@ class TestCleanCsv:
         path = self._write_csv(tmp_path, "a,b\n1,N/A\n2,null\n")
         report, rows = analyze_csv(path)
         out = str(tmp_path / "out.csv")
-        clean_csv(report, rows, out, drop_duplicates=False,
-                  drop_empty_cols=False, strip_whitespace=False, normalize_nulls=True)
+        clean_csv(
+            report,
+            rows,
+            out,
+            drop_duplicates=False,
+            drop_empty_cols=False,
+            strip_whitespace=False,
+            normalize_nulls=True,
+        )
         with open(out, encoding="utf-8") as fh:
             reader = csv.reader(fh)
             rows_out = list(reader)
