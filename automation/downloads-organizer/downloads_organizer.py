@@ -506,7 +506,7 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
     logging.info("Performing initial cleanup scan before entering active watch...")
     organizer.scan_and_organize()
 
-    observer = Observer()
+    observer: Any = Observer()
     handler = DownloadWatchHandler(organizer)
     # Watch non-recursively to avoid monitoring already organized folders
     observer.schedule(handler, path=str(organizer.source), recursive=False)
