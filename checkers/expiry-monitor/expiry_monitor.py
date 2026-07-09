@@ -12,8 +12,9 @@ import socket
 import ssl
 import sys
 from typing import Any, Dict, List, Optional
+
 import requests
-import whois
+import whois  # type: ignore[import-untyped]
 
 
 def get_ssl_expiry(domain: str, port: int = 443) -> Dict[str, Any]:
@@ -39,7 +40,7 @@ def get_ssl_expiry(domain: str, port: int = 443) -> Dict[str, Any]:
                     }
 
                 not_after = cert.get("notAfter")
-                if not not_after:
+                if not isinstance(not_after, str):
                     return {
                         "expiry_date": None,
                         "days_left": None,
@@ -190,10 +191,7 @@ def send_webhook(webhook_url: str, alerts: List[str]) -> None:
     if not alerts:
         return
     payload = {
-        "content": (
-            "⚠️ **SSL/Domain Expiry Monitor Alert!**\n"
-            + "\n".join(alerts)
-        )
+        "content": ("⚠️ **SSL/Domain Expiry Monitor Alert!**\n" + "\n".join(alerts))
     }
     try:
         res = requests.post(webhook_url, json=payload, timeout=10)
@@ -243,7 +241,7 @@ def print_report(reports: List[Dict[str, Any]]) -> None:
     print("=" * 77)
 
 
-def main() -> None:  # pylint: disable=too-many-branches
+def main(argv: Optional[List[str]] = None) -> None:  # pylint: disable=too-many-branches
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -284,7 +282,7 @@ def main() -> None:  # pylint: disable=too-many-branches
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Configure logging
     log_level = logging.INFO if args.verbose else logging.WARNING
@@ -299,7 +297,8 @@ def main() -> None:  # pylint: disable=too-many-branches
         try:
             with open(args.file, "r", encoding="utf-8") as f:
                 domains = [
-                    line.strip() for line in f
+                    line.strip()
+                    for line in f
                     if line.strip() and not line.startswith("#")
                 ]
         except FileNotFoundError:
@@ -323,9 +322,7 @@ def main() -> None:  # pylint: disable=too-many-branches
             if rep["ssl"]["status"] in ("EXPIRED", "CRITICAL"):
                 has_failure = True
         elif rep["ssl"]["status"] == "ERROR":
-            alerts.append(
-                f"• SSL check for `{domain}` failed: {rep['ssl']['error']}"
-            )
+            alerts.append(f"• SSL check for `{domain}` failed: {rep['ssl']['error']}")
             has_failure = True
 
         # Audit WHOIS status
