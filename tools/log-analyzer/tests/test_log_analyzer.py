@@ -118,6 +118,128 @@ class TestLogAnalyzer(unittest.TestCase):
         finally:
             os.remove(temp_path)
 
+    def test_parse_timestamp_fallback_fail(self) -> None:
+        """Test parse_timestamp fallback parse failures."""
+        self.assertIsNone(log_analyzer.parse_timestamp("bad_timestamp", "%Y-%m-%d"))
+        # Fallback split check failures
+        self.assertIsNone(log_analyzer.parse_timestamp("bad split", "%Y-%m-%d"))
+
+    def test_auto_detect_format_none(self) -> None:
+        """Test auto_detect_format returns None on unrecognized formats."""
+        fmt, pat = log_analyzer.auto_detect_format(["random line", "another random line"])
+        self.assertIsNone(fmt)
+        self.assertIsNone(pat)
+
+    def test_read_log_file_unknown_pattern(self) -> None:
+        """Test read_log_file yields UNKNOWN level when pattern is None."""
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.write("hello\n\nworld\n")
+            temp_path = tmp.name
+
+        try:
+            entries = list(log_analyzer.read_log_file(temp_path, None, 0, 0, 0, None))
+            self.assertEqual(len(entries), 2)
+            self.assertEqual(entries[0]["level"], "UNKNOWN")
+            self.assertEqual(entries[0]["message"], "hello")
+        finally:
+            os.remove(temp_path)
+
+    def test_read_log_file_status_code(self) -> None:
+        """Test HTTP status code conversion when level_idx is 0."""
+        # 200 -> INFO, 404 -> WARNING, 500 -> ERROR
+        import re
+        pat = re.compile(log_analyzer.LOG_FORMATS["common"][0])
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.write(
+                '127.0.0.1 - - [01/Jan/2026:00:00:00 +0000] "GET / HTTP/1.1" 200 1234\n'
+                '127.0.0.1 - - [01/Jan/2026:00:00:00 +0000] "GET / HTTP/1.1" 404 1234\n'
+                '127.0.0.1 - - [01/Jan/2026:00:00:00 +0000] "GET / HTTP/1.1" 500 1234\n'
+            )
+            temp_path = tmp.name
+
+        try:
+            entries = list(log_analyzer.read_log_file(temp_path, pat, 2, 0, 4, "%d/%b/%Y:%H:%M:%S %z"))
+            self.assertEqual(len(entries), 3)
+            self.assertEqual(entries[0]["level"], "INFO")
+            self.assertEqual(entries[1]["level"], "WARNING")
+            self.assertEqual(entries[2]["level"], "ERROR")
+        finally:
+            os.remove(temp_path)
+
+    def test_analyze_spikes_edge_cases(self) -> None:
+        """Test analyze_spikes handling empty list and standard deviation equals zero."""
+        self.assertEqual(log_analyzer.analyze_spikes([], 5, 2.0), [])
+        
+        # Zero standard deviation (identical volume in all buckets)
+        now = datetime.datetime.now()
+        timestamps = [now, now, now + datetime.timedelta(minutes=10), now + datetime.timedelta(minutes=10)]
+        self.assertEqual(log_analyzer.analyze_spikes(timestamps, 5, 2.0), [])
+
+    def test_analyze_log_errors(self) -> None:
+        """Test analyze_log raising FileNotFoundError on invalid file path."""
+        with self.assertRaises(FileNotFoundError):
+            log_analyzer.analyze_log("nonexistent_log_file_123.log")
+
+    def test_print_report(self) -> None:
+        """Test print_report prints correct logs without errors."""
+        import io
+        from unittest.mock import patch
+        
+        results = {
+            "summary": {
+                "file_path": "test.log",
+                "total_lines": 100,
+                "parsed_lines": 90,
+                "errors": 5,
+                "warnings": 10
+            },
+            "errors": [
+                {
+                    "normalized": "error message",
+                    "count": 5,
+                    "sample": "error message",
+                    "first_seen": "2026-01-01T00:00:00",
+                    "last_seen": "2026-01-01T00:05:00",
+                    "lines": [1, 2, 3]
+                }
+            ],
+            "spikes": [
+                {
+                    "start": "2026-01-01T00:00:00",
+                    "end": "2026-01-01T00:05:00",
+                    "count": 5,
+                    "stddevs_above": 3.5
+                }
+            ]
+        }
+        
+        f = io.StringIO()
+        with patch('sys.stdout', new=f):
+            log_analyzer.print_report(results)
+        
+        output = f.getvalue()
+        self.assertIn("LOG ANALYSIS REPORT", output)
+        self.assertIn("TOP ERROR GROUPS", output)
+        self.assertIn("DETECTED SPIKES", output)
+
+    def test_main_cli_execution(self) -> None:
+        """Test main function CLI entry point scenarios."""
+        # 1. File not found exits 1
+        with self.assertRaises(SystemExit) as exc:
+            log_analyzer.main(["nonexistent_log_123.log"])
+        self.assertEqual(exc.exception.code, 1)
+
+        # 2. Valid run with json output
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.write("2026-01-01 00:00:00 - INFO - main - hello\n")
+            temp_path = tmp.name
+
+        try:
+            # Succeeded run does not call sys.exit, so it completes without raising SystemExit
+            log_analyzer.main([temp_path, "--type", "python", "--json-output"])
+        finally:
+            os.remove(temp_path)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -106,7 +106,7 @@ def normalize_message(msg: str) -> str:
 
 def auto_detect_format(
     sample_lines: List[str],
-) -> Tuple[Optional[str], Optional[re.Pattern]]:
+) -> Tuple[Optional[str], Optional[re.Pattern[str]]]:
     """Auto-detects the log format based on a few sample lines.
 
     Args:
@@ -123,9 +123,10 @@ def auto_detect_format(
     return None, None
 
 
-def read_log_file(  # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+def read_log_file(
     file_path: str,
-    pattern: Optional[re.Pattern],
+    pattern: Optional[re.Pattern[str]],
     ts_idx: int,
     level_idx: int,
     msg_idx: int,
@@ -226,9 +227,7 @@ def analyze_spikes(
 
     buckets: Dict[datetime.datetime, int] = collections.defaultdict(int)
     for ts in timestamps:
-        bucket_start = start_time + (
-            math.floor((ts - start_time) / delta) * delta
-        )
+        bucket_start = start_time + (math.floor((ts - start_time) / delta) * delta)
         buckets[bucket_start] += 1
 
     counts = list(buckets.values())
@@ -246,14 +245,14 @@ def analyze_spikes(
     for bucket_start, count in sorted(buckets.items()):
         stddevs_above = (count - mean) / stddev
         if stddevs_above >= threshold_stddev and count > mean:
-            spikes.append(
-                (bucket_start, bucket_start + delta, count, stddevs_above)
-            )
+            spikes.append((bucket_start, bucket_start + delta, count, stddevs_above))
 
     return spikes
 
 
-def analyze_log(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-locals,too-many-branches
+# pylint: disable=too-many-statements,too-many-positional-arguments
+def analyze_log(
     file_path: str,
     fmt_type: Optional[str] = None,
     custom_pattern: Optional[str] = None,
@@ -308,9 +307,7 @@ def analyze_log(  # pylint: disable=too-many-arguments,too-many-locals,too-many-
         fmt_name, pattern = auto_detect_format(sample_lines)
         if fmt_name:
             logging.info("Auto-detected log format: %s", fmt_name)
-            _, ts_idx, level_idx, msg_idx, default_ts_format = LOG_FORMATS[
-                fmt_name
-            ]
+            _, ts_idx, level_idx, msg_idx, default_ts_format = LOG_FORMATS[fmt_name]
             if not selected_ts_format:
                 selected_ts_format = default_ts_format
         else:
@@ -359,8 +356,7 @@ def analyze_log(  # pylint: disable=too-many-arguments,too-many-locals,too-many-
             if entry["timestamp"]:
                 if (
                     not error_groups[norm_msg]["first_seen"]
-                    or entry["timestamp"]
-                    < error_groups[norm_msg]["first_seen"]
+                    or entry["timestamp"] < error_groups[norm_msg]["first_seen"]
                 ):
                     error_groups[norm_msg]["first_seen"] = entry["timestamp"]
                 if (
@@ -382,9 +378,7 @@ def analyze_log(  # pylint: disable=too-many-arguments,too-many-locals,too-many-
                 "first_seen": (
                     v["first_seen"].isoformat() if v["first_seen"] else None
                 ),
-                "last_seen": (
-                    v["last_seen"].isoformat() if v["last_seen"] else None
-                ),
+                "last_seen": (v["last_seen"].isoformat() if v["last_seen"] else None),
                 "lines": v["lines"][:10],
             }
             for k, v in error_groups.items()
@@ -457,7 +451,7 @@ def print_report(results: Dict[str, Any]) -> None:
     print("=" * 60)
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -518,7 +512,7 @@ def main() -> None:
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     log_level = logging.DEBUG if args.verbose else logging.WARNING
     logging.basicConfig(
