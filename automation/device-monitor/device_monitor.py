@@ -13,7 +13,7 @@ import logging
 import os
 import re
 import socket
-import subprocess
+import subprocess  # nosec B404
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -73,7 +73,7 @@ def get_local_ip() -> Optional[str]:
     try:
         # Does not send actual packets
         s.connect(("8.8.8.8", 80))
-        local_ip = s.getsockname()[0]
+        local_ip = str(s.getsockname()[0])
     except Exception:  # pylint: disable=broad-except
         local_ip = None
     finally:
@@ -122,7 +122,7 @@ def ping_host(ip: str) -> bool:
 
     try:
         # Hide stdout/stderr to avoid clutter
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B603
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
         )
         return res.returncode == 0
@@ -158,7 +158,7 @@ def parse_arp_table() -> List[Tuple[str, str]]:
         else:
             cmd = ["arp", "-an"]
 
-        res = subprocess.run(
+        res = subprocess.run(  # nosec B603
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True
         )
         output = res.stdout
@@ -203,7 +203,8 @@ def load_state(state_file: str) -> Dict[str, Any]:
     if os.path.exists(state_file):
         try:
             with open(state_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data: Dict[str, Any] = json.load(f)
+                return data
         except Exception as e:  # pylint: disable=broad-except
             logging.error("Error reading state file: %s", e)
 
@@ -355,13 +356,11 @@ def print_report(state: Dict[str, Any], changes: List[Dict[str, Any]]) -> None:
             return socket.inet_aton(item[1]["ip"])
 
         online_list = [
-            (mac, dev) for mac, dev in devices.items()
-            if dev["status"] == "online"
+            (mac, dev) for mac, dev in devices.items() if dev["status"] == "online"
         ]
         for mac, dev in sorted(online_list, key=ip_key):
             print(
-                f"{dev['ip']:<16} {mac:<20} "
-                f"{dev['vendor']:<15} {dev['name']:<15}"
+                f"{dev['ip']:<16} {mac:<20} " f"{dev['vendor']:<15} {dev['name']:<15}"
             )
 
     print("\n" + "=" * 60)
@@ -383,7 +382,7 @@ def print_report(state: Dict[str, Any], changes: List[Dict[str, Any]]) -> None:
     print("=" * 60)
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -420,7 +419,7 @@ def main() -> None:
         "-v", "--verbose", action="store_true", help="Enable debug logs"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Configure logging
     log_level = logging.DEBUG if args.verbose else logging.WARNING
