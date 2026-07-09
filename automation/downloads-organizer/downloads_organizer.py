@@ -6,14 +6,14 @@ Uses the watchdog library if running in active watch mode.
 """
 
 import argparse
-from datetime import datetime
 import fnmatch
 import json
 import logging
-from pathlib import Path
 import shutil
 import sys
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 # Optional watchdog integration
@@ -127,9 +127,7 @@ class FolderOrganizer:
             stability_retries: Number of retries for stability check.
         """
         self.source = source.resolve()
-        self.destination = (
-            destination.resolve() if destination else self.source
-        )
+        self.destination = destination.resolve() if destination else self.source
         self.conflict_strategy = conflict_strategy
         self.date_grouping = date_grouping
         self.dry_run = dry_run
@@ -140,9 +138,7 @@ class FolderOrganizer:
         self.config = self._load_config(config_path)
 
         # Prepare helper sets/lists for fast checking
-        self.temp_exts = {
-            ext.lower() for ext in self.config.get("temp_extensions", [])
-        }
+        self.temp_exts = {ext.lower() for ext in self.config.get("temp_extensions", [])}
         self.ignored_patterns = self.config.get("ignored_patterns", [])
         self.default_category = self.config.get("default_category", "Others")
 
@@ -268,16 +264,14 @@ class FolderOrganizer:
         # Iterate through rules in config
         for rule in self.config.get("rules", []):
             # Check extensions match
-            if "extensions" in rule and ext in {
-                e.lower() for e in rule["extensions"]
-            }:
-                return rule["name"]
+            if "extensions" in rule and ext in {e.lower() for e in rule["extensions"]}:
+                return str(rule["name"])
 
             # Check filename glob patterns match
             if "patterns" in rule:
                 for pattern in rule["patterns"]:
                     if fnmatch.fnmatch(name, pattern):
-                        return rule["name"]
+                        return str(rule["name"])
 
         return self.default_category
 
@@ -509,8 +503,10 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
     observer = Observer()
     handler = DownloadWatchHandler(organizer)
     # Watch non-recursively to avoid monitoring already organized folders
-    observer.schedule(handler, path=str(organizer.source), recursive=False)
-    observer.start()
+    observer.schedule(  # type: ignore[no-untyped-call]
+        handler, path=str(organizer.source), recursive=False
+    )
+    observer.start()  # type: ignore[no-untyped-call]
 
     logging.info("Actively watching directory: %s", organizer.source)
     try:
@@ -518,7 +514,7 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
             time.sleep(1)
     except KeyboardInterrupt:
         logging.info("Stopping watch observer...")
-        observer.stop()
+        observer.stop()  # type: ignore[no-untyped-call]
     observer.join()
 
 
@@ -563,8 +559,7 @@ def parse_arguments() -> argparse.Namespace:
         "--config",
         type=Path,
         help=(
-            "Path to a JSON configuration file defining custom "
-            "categorization rules."
+            "Path to a JSON configuration file defining custom " "categorization rules."
         ),
     )
     parser.add_argument(

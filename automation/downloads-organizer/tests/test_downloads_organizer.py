@@ -269,7 +269,8 @@ def test_download_watch_handler(
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
-    from downloads_organizer import DownloadWatchHandler, FileSystemEvent
+    from downloads_organizer import DownloadWatchHandler
+    from watchdog.events import FileSystemEvent
 
     organizer = FolderOrganizer(source=tmp_path)
     handler = DownloadWatchHandler(organizer)
@@ -413,7 +414,8 @@ def test_download_watch_handler_fails_stability(
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
-    from downloads_organizer import DownloadWatchHandler, FileSystemEvent
+    from downloads_organizer import DownloadWatchHandler
+    from watchdog.events import FileSystemEvent
 
     organizer = FolderOrganizer(source=tmp_path)
     handler = DownloadWatchHandler(organizer)
@@ -458,7 +460,8 @@ def test_watchdog_ignore_check(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     if not HAS_WATCHDOG:
         pytest.skip("Watchdog library is not installed.")
 
-    from downloads_organizer import DownloadWatchHandler, FileSystemEvent
+    from downloads_organizer import DownloadWatchHandler
+    from watchdog.events import FileSystemEvent
 
     organizer = FolderOrganizer(source=tmp_path)
     handler = DownloadWatchHandler(organizer)
@@ -518,3 +521,179 @@ def test_is_file_stable_deleted_during_check(
     assert organizer.is_file_stable(file_path, delay=0.1, retries=5) is False
     # The sleep should have been called only once, and we didn't do all 5 retries/sleeps
     assert sleep_called == 1
+
+
+def test_should_ignore_directory(tmp_path: Path) -> None:
+    """Tests should_ignore with a directory path."""
+    organizer = FolderOrganizer(source=tmp_path)
+    subdir = tmp_path / "subdir"
+    subdir.mkdir()
+    assert organizer.should_ignore(subdir) is True
+
+
+def test_classify_file_patterns(tmp_path: Path) -> None:
+    """Tests classify_file using custom glob patterns."""
+    config = {
+        "rules": [
+            {
+                "name": "CustomDocs",
+                "patterns": ["*_report_*", "summary*"]
+            }
+        ]
+    }
+    organizer = FolderOrganizer(source=tmp_path, config_path=None)
+    organizer.config = config
+    
+    assert organizer.classify_file(Path("my_report_final.doc")) == "CustomDocs"
+    assert organizer.classify_file(Path("summary_v1.txt")) == "CustomDocs"
+    assert organizer.classify_file(Path("other.txt")) == "Others"
+
+
+def test_organize_file_timestamp_oserror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests organize_file logging/handling OSError during date grouping stat."""
+    organizer = FolderOrganizer(source=tmp_path, destination=tmp_path, date_grouping=True)
+    f = tmp_path / "file.txt"
+    f.touch()
+    
+    class DummyStat:
+        def __init__(self, original_stat):
+            self.original_stat = original_stat
+
+        @property
+        def st_mode(self):
+            return self.original_stat.st_mode
+
+        @property
+        def st_mtime(self):
+            raise OSError("Failed to get mtime")
+
+        def __getattr__(self, name):
+            return getattr(self.original_stat, name)
+            
+    original_stat = Path.stat
+    def mock_stat(self, *args, **kwargs):
+        stat_res = original_stat(self, *args, **kwargs)
+        if self.name == "file.txt":
+            return DummyStat(stat_res)
+        return stat_res
+        
+    monkeypatch.setattr(Path, "stat", mock_stat)
+    
+    # Should fall back to no date subgrouping folder (directly Category/file.txt)
+    # The default category for .txt is Documents
+    res = organizer.organize_file(f)
+    assert res is True
+    # Clean up the file if moved
+    assert (tmp_path / "Documents" / "file.txt").exists()
+
+
+def test_organize_file_move_oserror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests organize_file handling OSError during shutil.move."""
+    organizer = FolderOrganizer(source=tmp_path, destination=tmp_path)
+    f = tmp_path / "file.txt"
+    f.touch()
+    
+    def mock_move(*args, **kwargs):
+        raise OSError("Permission denied")
+    monkeypatch.setattr("shutil.move", mock_move)
+    
+    res = organizer.organize_file(f)
+    assert res is False
+
+
+def test_scan_and_organize_missing_source(tmp_path: Path) -> None:
+    """Tests scan_and_organize with nonexistent source directory."""
+    nonexistent = tmp_path / "missing"
+    organizer = FolderOrganizer(source=nonexistent)
+    assert organizer.scan_and_organize() == 0
+
+
+def test_scan_and_organize_iterdir_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests scan_and_organize handling OSError during iterdir."""
+    organizer = FolderOrganizer(source=tmp_path)
+    def mock_iterdir(*args, **kwargs):
+        raise OSError("Iterdir failed")
+    monkeypatch.setattr(Path, "iterdir", mock_iterdir)
+    assert organizer.scan_and_organize() == 0
+
+
+def test_load_config_errors(tmp_path: Path) -> None:
+    """Tests load_config with various configuration format errors."""
+    organizer = FolderOrganizer(source=tmp_path)
+    
+    # 1. Nonexistent/unreadable config file
+    with pytest.raises(SystemExit):
+        organizer._load_config(tmp_path / "nonexistent.json")
+        
+    # 2. Invalid JSON syntax
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text("invalid json")
+    with pytest.raises(SystemExit):
+        organizer._load_config(bad_json)
+        
+    # 3. JSON not dict
+    bad_json.write_text("[1, 2, 3]")
+    with pytest.raises(SystemExit):
+        organizer._load_config(bad_json)
+        
+    # 4. Missing rules key
+    bad_json.write_text('{"other": []}')
+    with pytest.raises(SystemExit):
+        organizer._load_config(bad_json)
+        
+    # 5. Rules not list
+    bad_json.write_text('{"rules": {}}')
+    with pytest.raises(SystemExit):
+        organizer._load_config(bad_json)
+        
+    # 6. Rule not dictionary
+    bad_json.write_text('{"rules": [123]}')
+    with pytest.raises(SystemExit):
+        organizer._load_config(bad_json)
+
+
+def test_run_watch_mode_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests run_watch_mode with missing watchdog library or missing source dir."""
+    import downloads_organizer
+    
+    organizer = FolderOrganizer(source=tmp_path)
+    
+    # 1. HAS_WATCHDOG is False
+    monkeypatch.setattr(downloads_organizer, "HAS_WATCHDOG", False)
+    with pytest.raises(SystemExit):
+        downloads_organizer.run_watch_mode(organizer)
+        
+    # Re-enable watchdog mock
+    monkeypatch.setattr(downloads_organizer, "HAS_WATCHDOG", True)
+    
+    # 2. Source path doesn't exist
+    missing_dir_organizer = FolderOrganizer(source=tmp_path / "missing")
+    with pytest.raises(SystemExit):
+        downloads_organizer.run_watch_mode(missing_dir_organizer)
+
+
+def test_main_cli_scan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests main function scan mode integration."""
+    import downloads_organizer
+    
+    class DummyArgs:
+        source = tmp_path
+        destination = tmp_path
+        watch = False
+        dry_run = False
+        config = None
+        conflict = "rename"
+        date_grouping = False
+        no_stability_check = True
+        stability_delay = 0.1
+        stability_retries = 1
+        verbose = True
+        
+    monkeypatch.setattr(downloads_organizer, "parse_arguments", lambda: DummyArgs())
+    
+    f = tmp_path / "file.txt"
+    f.touch()
+    
+    downloads_organizer.main()
+    assert (tmp_path / "Documents" / "file.txt").exists()
+
