@@ -8,16 +8,13 @@ on:
 
 jobs:
   quality-gate:
-    name: Quality Gate (${{ matrix.os }})
+    name: Quality Gate (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # Windows/macOS legs matter here because a few scripts (device-monitor's
-        # ARP parsing, port-inspector's psutil calls, path handling in general)
-        # explicitly claim cross-platform behavior. Drop macos-latest if Actions
-        # minutes become a real cost concern — it's the priciest runner.
         os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.12', '3.13', '3.14']
     defaults:
       run:
         shell: bash
@@ -29,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       - name: Install pinned dev/QA tooling
@@ -39,66 +36,119 @@ jobs:
 
       - name: Install script dependencies
         run: |
-          # Every script's own requirements.txt, wherever it lives.
           find . -name "requirements.txt" -not -path '*/.*' -exec pip install -r {} \;
 
-      - name: Format checks
-        run: |
-          black --check .
-          isort --check-only .
+      # Every check below runs independently (continue-on-error) so a single
+      # failing tool never hides the others. The summary step at the end
+      # reports everything in one place and fails the job if anything broke.
+
+      - name: Black check
+        id: black
+        continue-on-error: true
+        run: black --check .
+
+      - name: Isort check
+        id: isort
+        continue-on-error: true
+        run: isort --check-only .
 
       - name: Flake8 check
+        id: flake8
+        continue-on-error: true
         run: |
+          echo "::add-matcher::.github/problem-matchers/flake8.json"
           flake8 --max-line-length=88 .
+          echo "::remove-matcher owner=flake8::"
 
-      - name: Pylint checks
+      - name: Pylint check
+        id: pylint
+        continue-on-error: true
         run: |
+          echo "::add-matcher::.github/problem-matchers/pylint.json"
           find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' -exec pylint {} +
+          echo "::remove-matcher owner=pylint::"
 
-      - name: Mypy checks
+      - name: Mypy check
+        id: mypy
+        continue-on-error: true
         run: |
-          # explicit_package_bases/namespace_packages in mypy.ini keep
-          # same-named files in different script folders (e.g. two
-          # main.py) from colliding as "duplicate module" when passed
-          # to one invocation.
+          echo "::add-matcher::.github/problem-matchers/mypy.json"
           find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
             -exec mypy --config-file=mypy.ini {} +
+          echo "::remove-matcher owner=mypy::"
 
-      - name: Bandit checks
-        run: |
-          bandit -r . -x '**/tests/**,**/.*'
+      - name: Bandit check
+        id: bandit
+        continue-on-error: true
+        run: bandit -r . -x '**/tests/**,**/.*'
 
       - name: Vulture check
-        run: |
-          find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' -exec vulture {} +
+        id: vulture
+        continue-on-error: true
+        run: find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' -exec vulture {} +
 
       - name: Pip-audit check
-        run: |
-          find . -name "requirements.txt" -not -path '*/.*' -exec pip-audit -r {} \;
+        id: pip_audit
+        continue-on-error: true
+        run: find . -name "requirements.txt" -not -path '*/.*' -exec pip-audit -r {} \;
 
       - name: Pytest + per-script coverage gate
+        id: pytest
+        continue-on-error: true
         run: |
           # A single repo-wide coverage average would let a weak script hide
-          # behind strong ones. Instead, gate each script folder that has a
-          # tests/ dir individually at 80%, and fail the job if any one
-          # script misses — while still running and reporting every folder,
-          # not stopping at the first failure.
-          set +e
+          # behind strong ones. Gate each script folder with a tests/ dir
+          # individually at 80%, running and reporting every folder rather
+          # than stopping at the first failure. Each script's run is wrapped
+          # in a collapsible ::group:: so the raw log stays navigable once
+          # this repo has hundreds of script folders, not just 16.
           failures=0
+          failed_dirs=""
+          echo "## Pytest + Coverage by script" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Script | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
           for test_dir in $(find . -type d -name tests -not -path '*/.*'); do
             script_dir=$(dirname "$test_dir")
-            echo "== $script_dir =="
+            echo "::group::$script_dir"
             python -m pytest "$test_dir" \
               --import-mode=importlib \
               --cov="$script_dir" \
               --cov-report=term-missing \
               --cov-fail-under=80
-            if [ $? -ne 0 ]; then
-              echo "FAILED (tests or <80% coverage): $script_dir"
+            status=$?
+            echo "::endgroup::"
+            if [ $status -ne 0 ]; then
+              echo "| $script_dir | ❌ fail |" >> "$GITHUB_STEP_SUMMARY"
+              failed_dirs="$failed_dirs $script_dir"
               failures=$((failures + 1))
+            else
+              echo "| $script_dir | ✅ pass |" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           if [ "$failures" -gt 0 ]; then
-            echo "$failures script(s) failed tests or the coverage threshold."
+            echo "$failures script(s) failed tests or the coverage threshold:$failed_dirs"
+            exit 1
+          fi
+
+      - name: Summarize results
+        if: always()
+        run: |
+          results="black:${{ steps.black.outcome }} isort:${{ steps.isort.outcome }} flake8:${{ steps.flake8.outcome }} pylint:${{ steps.pylint.outcome }} mypy:${{ steps.mypy.outcome }} bandit:${{ steps.bandit.outcome }} vulture:${{ steps.vulture.outcome }} pip_audit:${{ steps.pip_audit.outcome }} pytest:${{ steps.pytest.outcome }}"
+          failed=0
+          echo "## Quality Gate Summary (${{ matrix.os }}, py${{ matrix.python-version }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for pair in $results; do
+            name="${pair%%:*}"
+            status="${pair##*:}"
+            if [ "$status" = "success" ]; then
+              echo "| $name | ✅ pass |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| $name | ❌ fail |" >> "$GITHUB_STEP_SUMMARY"
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo "One or more checks failed — see individual step logs above for exact files/lines."
             exit 1
           fi
