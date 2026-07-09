@@ -36,7 +36,10 @@ def fetch_page_content(url: str, headers: Optional[Dict[str, str]] = None) -> st
     # Timeout at 10 seconds to avoid hanging indefinitely
     res = requests.get(url, headers=req_headers, timeout=10)
     res.raise_for_status()
-    return res.text
+    content = res.text
+    if not isinstance(content, str):
+        raise TypeError("Expected response body to be a string")
+    return content
 
 
 def extract_section_text(html: str, selector: str) -> Tuple[str, str]:
