@@ -9,7 +9,8 @@ import json
 import logging
 import sys
 from typing import Any, Dict, List, Optional
-import psutil
+
+import psutil  # type: ignore[import-untyped]
 
 
 def get_process_info(pid: int) -> Dict[str, Any]:
@@ -120,7 +121,8 @@ def list_connections(
     return conns
 
 
-def terminate_process(pid: int, force: bool = False) -> bool:  # pylint: disable=too-many-return-statements
+# pylint: disable=too-many-return-statements
+def terminate_process(pid: int, force: bool = False) -> bool:
     """Safely or forcefully terminates a process.
 
     Args:
@@ -163,8 +165,7 @@ def terminate_process(pid: int, force: bool = False) -> bool:  # pylint: disable
         return True
     except psutil.AccessDenied:
         logging.error(
-            "Access denied to terminate PID %d. "
-            "Run with administrator privileges.",
+            "Access denied to terminate PID %d. Run with administrator privileges.",
             pid,
         )
         return False
@@ -218,7 +219,7 @@ def print_table(connections: List[Dict[str, Any]]) -> None:
     print("-" * 120)
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -254,7 +255,7 @@ def main() -> None:
         "-v", "--verbose", action="store_true", help="Enable verbose debug logging"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Configure logging
     log_level = logging.INFO if args.verbose else logging.WARNING
