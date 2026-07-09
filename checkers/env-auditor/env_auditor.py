@@ -60,7 +60,7 @@ DOCKER_COMPOSE_PATTERNS: Tuple[str, ...] = (
 
 # Pattern to find env var references in source code
 # Matches: os.environ['KEY'], os.getenv('KEY'), process.env.KEY, ${KEY}, $KEY etc.
-VAR_USAGE_PATTERNS: List[re.Pattern] = [
+VAR_USAGE_PATTERNS: List[re.Pattern[str]] = [
     # os.environ['KEY']  (bracket access)
     re.compile(r"""os\.environ\s*\[\s*['"]([A-Z_][A-Z0-9_]*)['"]"""),
     # os.environ.get('KEY', ...) or os.environ.get("KEY")  (method call)
