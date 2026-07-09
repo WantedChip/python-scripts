@@ -629,3 +629,57 @@ def test_main_cli_sorting_mtime(temp_workspace) -> None:
     )
     assert "001_a.txt" in os.listdir(temp_workspace)
     assert "002_b.txt" in os.listdir(temp_workspace)
+
+
+def test_cross_platform_collisions(temp_workspace) -> None:
+    """Explicitly verify cross-platform collision safety.
+
+    Covers:
+    1. Case-only rename (e.g., hello.txt -> HELLO.txt) does not conflict.
+    2. Genuine external collision (e.g., a.txt -> existing b.txt) conflicts.
+    3. Many-to-one collision (e.g., a.txt -> c.txt and b.txt -> c.txt) conflicts.
+    """
+    f1 = temp_workspace / "hello.txt"
+    f1.write_text("hello content")
+
+    # 1. Case-only rename validation (hello.txt -> HELLO.txt)
+    rename_list = [(str(f1), str(temp_workspace / "HELLO.txt"))]
+    conflicts = file_renamer.validate_renames(rename_list)
+    assert (
+        len(conflicts) == 0
+    ), f"Case-only rename triggered unexpected conflicts: {conflicts}"
+
+    # Execute case-only rename
+    file_renamer.execute_2phase_rename(rename_list)
+    dir_files = os.listdir(temp_workspace)
+    assert "HELLO.TXT" in [f.upper() for f in dir_files]
+
+    # 2. Genuine external collision (HELLO.txt -> existing collision.txt)
+    f2 = temp_workspace / "collision.txt"
+    f2.write_text("other content")
+
+    rename_list_ext = [(str(temp_workspace / "HELLO.txt"), str(f2))]
+    conflicts_ext = file_renamer.validate_renames(rename_list_ext)
+    assert any("External collision" in c for c in conflicts_ext)
+
+    # 3. Many-to-one collision (a.txt -> dest.txt, b.txt -> dest.txt)
+    f3 = temp_workspace / "a.txt"
+    f4 = temp_workspace / "b.txt"
+    f3.write_text("a")
+    f4.write_text("b")
+
+    rename_list_m21 = [
+        (str(f3), str(temp_workspace / "dest.txt")),
+        (str(f4), str(temp_workspace / "dest.txt")),
+    ]
+    conflicts_m21 = file_renamer.validate_renames(rename_list_m21)
+    assert any("Many-to-one collision" in c for c in conflicts_m21)
+
+    # 4. Case-insensitive many-to-one collision (a.txt -> dest.txt, b.txt -> DEST.txt)
+    rename_list_m21_case = [
+        (str(f3), str(temp_workspace / "dest.txt")),
+        (str(f4), str(temp_workspace / "DEST.txt")),
+    ]
+    conflicts_m21_case = file_renamer.validate_renames(rename_list_m21_case)
+    if sys.platform in ("win32", "darwin"):
+        assert any("Many-to-one collision" in c for c in conflicts_m21_case)

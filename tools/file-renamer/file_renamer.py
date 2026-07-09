@@ -24,6 +24,21 @@ from typing import Dict, List, Optional, Tuple
 # pylint: disable=too-many-locals,too-many-nested-blocks,raise-missing-from
 
 
+def normcase_fs(path: str) -> str:
+    """Normalize case of path based on filesystem case-sensitivity.
+
+    Args:
+        path: Path string.
+
+    Returns:
+        Normalized path string.
+    """
+    path_abs = os.path.abspath(path)
+    if sys.platform in ("win32", "darwin"):
+        return path_abs.lower()
+    return path_abs
+
+
 def parse_args(args_list: Optional[List[str]] = None) -> argparse.Namespace:
     """Parse command line arguments.
 
@@ -264,13 +279,11 @@ def validate_renames(rename_list: List[Tuple[str, str]]) -> List[str]:
     Returns:
         List of conflict description strings.
     """
-    src_set_normalized = {
-        os.path.abspath(os.path.normcase(src)) for src, _ in rename_list
-    }
+    src_set_normalized = {normcase_fs(src) for src, _ in rename_list}
 
     dest_normalized_to_srcs: Dict[str, List[Tuple[str, str]]] = {}
     for src, dest in rename_list:
-        dest_norm = os.path.abspath(os.path.normcase(dest))
+        dest_norm = normcase_fs(dest)
         dest_normalized_to_srcs.setdefault(dest_norm, []).append((src, dest))
 
     conflicts = []
@@ -289,12 +302,19 @@ def validate_renames(rename_list: List[Tuple[str, str]]) -> List[str]:
     # Check 2: External collisions
     for src, dest in rename_list:
         dest_abs = os.path.abspath(dest)
-        dest_normalized = os.path.normcase(dest_abs)
-        if os.path.exists(dest_abs) and dest_normalized not in src_set_normalized:
-            conflicts.append(
-                f"External collision: Target '{dest}' already exists on disk "
-                f"and is not in the source rename list (from '{src}')"
-            )
+        dest_normalized = normcase_fs(dest_abs)
+        if os.path.exists(dest_abs):
+            is_same = False
+            try:
+                if os.path.samefile(src, dest_abs):
+                    is_same = True
+            except OSError:
+                pass
+            if not is_same and dest_normalized not in src_set_normalized:
+                conflicts.append(
+                    f"External collision: Target '{dest}' already exists on disk "
+                    f"and is not in the source rename list (from '{src}')"
+                )
 
     return conflicts
 
@@ -314,26 +334,35 @@ def print_preview_table(
 
     # Identify conflict destinations (case-insensitive)
     # Re-evaluate logic to label each row
-    src_set_normalized = {
-        os.path.abspath(os.path.normcase(src)) for src, _ in rename_list
-    }
+    src_set_normalized = {normcase_fs(src) for src, _ in rename_list}
     dest_normalized_to_srcs: Dict[str, List[str]] = {}
     for src, dest in rename_list:
-        dest_norm = os.path.abspath(os.path.normcase(dest))
+        dest_norm = normcase_fs(dest)
         dest_normalized_to_srcs.setdefault(dest_norm, []).append(src)
 
     for src, dest in rename_list:
         src_rel = os.path.relpath(src, target_dir)
         dest_rel = os.path.relpath(dest, target_dir)
 
-        dest_norm = os.path.abspath(os.path.normcase(dest))
+        dest_norm = normcase_fs(dest)
         dest_abs = os.path.abspath(dest)
 
         # Determine status
         status = "OK"
+        is_same = False
+        try:
+            if os.path.exists(dest_abs) and os.path.samefile(src, dest_abs):
+                is_same = True
+        except OSError:
+            pass
+
         if len(dest_normalized_to_srcs.get(dest_norm, [])) > 1:
             status = "COLLISION (Many-to-One)"
-        elif os.path.exists(dest_abs) and dest_norm not in src_set_normalized:
+        elif (
+            os.path.exists(dest_abs)
+            and not is_same
+            and dest_norm not in src_set_normalized
+        ):
             status = "COLLISION (External)"
         elif is_no_op(src, dest):
             status = "NO_CHANGE"
@@ -476,15 +505,21 @@ def execute_undo(history_file_path: str, target_dir: str) -> None:
 
     # 2. Verify all src files (original paths to restore) do not exist
     # (unless part of the undo plan)
-    dest_set_normalized = {os.path.normcase(d) for _, d in undo_pairs}
+    dest_set_normalized = {normcase_fs(d) for _, d in undo_pairs}
     existing_srcs = []
     for src_abs, dest_abs in undo_pairs:
         if os.path.exists(src_abs):
-            # If src_abs and dest_abs normalize to the same path (case-only change),
-            # it's the same file, so skip conflict warning
-            if os.path.normcase(src_abs) == os.path.normcase(dest_abs):
+            # If src_abs and dest_abs refer to the same filesystem object
+            # (case-only change), it's the same file, so skip conflict warning
+            is_same = False
+            try:
+                if os.path.samefile(src_abs, dest_abs):
+                    is_same = True
+            except OSError:
+                pass
+            if is_same:
                 continue
-            src_norm = os.path.normcase(src_abs)
+            src_norm = normcase_fs(src_abs)
             if src_norm not in dest_set_normalized:
                 existing_srcs.append(src_abs)
 
@@ -748,7 +783,9 @@ def main(args_list: Optional[List[str]] = None) -> None:
     # Save history log
     history_data = {
         "base_dir": target_dir.replace("\\", "/"),
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z"),
         "command": " ".join(sys.argv),
         "renames": [
             {
