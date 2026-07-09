@@ -52,7 +52,6 @@ class ColumnStats:
         detected_type: Inferred dominant type ('int', 'float', 'date',
             'bool', 'string').
         type_inconsistencies: Rows with values not matching the detected type.
-        malformed_dates: Rows with values that look like dates but are malformed.
     """
 
     name: str
@@ -61,7 +60,6 @@ class ColumnStats:
     unique_count: int = 0
     detected_type: str = "string"
     type_inconsistencies: List[int] = field(default_factory=list)
-    malformed_dates: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -272,7 +270,7 @@ def analyze_csv(path: str) -> Tuple[AnalysisReport, List[List[str]]]:
             seen_headers[stripped] = i
 
     # Duplicate row detection (by full row fingerprint)
-    row_fingerprints: Dict[Tuple, List[int]] = {}
+    row_fingerprints: Dict[Tuple[str, ...], List[int]] = {}
     for idx, row in enumerate(data_rows, start=2):  # 1-indexed, row 1 = header
         fp = tuple(row)
         row_fingerprints.setdefault(fp, []).append(idx)
