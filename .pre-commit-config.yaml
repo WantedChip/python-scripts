@@ -5,13 +5,11 @@ repos:
     rev: 24.4.2
     hooks:
       - id: black
-        args: [--line-length=88]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args: [--profile=black]
 
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
@@ -51,5 +49,4 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        args: ["--init-hook=import sys, os; sys.path.insert(0, os.path.abspath('.venv/Lib/site-packages'))"]
         exclude: (^|/)tests/
