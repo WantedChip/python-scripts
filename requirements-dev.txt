@@ -1,0 +1,16 @@
+# Pinned dev/QA tooling versions.
+# Single source of truth for both .pre-commit-config.yaml (local hooks) and
+# .github/workflows/ci.yml, so a local pre-commit pass and CI can never
+# silently disagree because "latest" moved between the two.
+# Bump deliberately, in one commit, when you want to move these forward.
+
+black==24.4.2
+isort==5.13.2
+flake8==7.0.0
+pylint==3.2.5
+mypy==1.10.0
+bandit==1.7.9
+vulture==2.11
+pytest==8.2.2
+pytest-cov==5.0.0
+pip-audit==2.7.3
