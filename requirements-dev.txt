@@ -4,6 +4,7 @@
 # silently disagree because "latest" moved between the two.
 # Bump deliberately, in one commit, when you want to move these forward.
 
+pre-commit==3.7.1
 black==24.4.2
 isort==5.13.2
 flake8==7.0.0
