@@ -3,6 +3,7 @@
 import os
 import sys
 import tempfile
+import requests
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -86,6 +87,94 @@ class TestWebsiteMonitor(unittest.TestCase):
             mock_send_webhook.assert_called_once()
         finally:
             os.remove(temp_path)
+
+
+    @patch("requests.post")
+    def test_send_webhook_exception(self, mock_post: MagicMock) -> None:
+        """Test send_webhook logs error on exception."""
+        mock_post.side_effect = requests.RequestException("Connection refused")
+        # Should not raise exception
+        website_monitor.send_webhook("https://webhook.site", {})
+
+    def test_load_states_corrupted(self) -> None:
+        """Test load_states returns empty dict on corrupted json or missing file."""
+        self.assertEqual(website_monitor.load_states("nonexistent_states.json"), {})
+
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.write("invalid json {")
+            temp_path = tmp.name
+
+        try:
+            self.assertEqual(website_monitor.load_states(temp_path), {})
+        finally:
+            os.remove(temp_path)
+
+    def test_save_states_exception(self) -> None:
+        """Test save_states handles exception on invalid path."""
+        # Should not raise exception
+        website_monitor.save_states("", {})
+
+    def test_load_config_exception(self) -> None:
+        """Test load_config raises exception on corrupted config."""
+        with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
+            tmp.write("invalid json {")
+            temp_path = tmp.name
+
+        try:
+            with self.assertRaises(Exception):
+                website_monitor.load_config(temp_path)
+        finally:
+            os.remove(temp_path)
+
+    @patch("website_monitor.fetch_page_content")
+    def test_run_monitor_missing_url_and_exceptions(self, mock_fetch: MagicMock) -> None:
+        """Test run_monitor with missing URL and target parsing exceptions."""
+        targets = [{"name": "Missing URL Target"}]
+        results = website_monitor.run_monitor(targets, "dummy.json")
+        self.assertEqual(results, {})
+
+        # Exception raised during fetch
+        mock_fetch.side_effect = requests.RequestException("Gateway Timeout")
+        targets_err = [{"name": "Error Target", "url": "https://test.com"}]
+        results_err = website_monitor.run_monitor(targets_err, "dummy.json")
+        self.assertEqual(results_err["https://test.com::body"]["status"], "error")
+
+    @patch("website_monitor.run_monitor")
+    @patch("website_monitor.load_config")
+    def test_main_cli(self, mock_load: MagicMock, mock_run: MagicMock) -> None:
+        """Test main CLI entry point."""
+        # 1. Mutually exclusive group: neither -u nor -c raises SystemExit 2
+        with self.assertRaises(SystemExit) as exc:
+            website_monitor.main([])
+        self.assertEqual(exc.exception.code, 2)
+
+        # 2. Mutually exclusive group: both -u and -c raises SystemExit 2
+        with self.assertRaises(SystemExit) as exc:
+            website_monitor.main(["-u", "https://test.com", "-c", "config.json"])
+        self.assertEqual(exc.exception.code, 2)
+
+        # 3. Successful run of single URL monitor
+        mock_run.return_value = {
+            "https://test.com::body": {
+                "name": "https://test.com",
+                "url": "https://test.com",
+                "selector": "body",
+                "status": "unchanged"
+            }
+        }
+        
+        import io
+        from unittest.mock import patch
+        f = io.StringIO()
+        with patch("sys.stdout", new=f):
+            website_monitor.main(["-u", "https://test.com", "--json-output"])
+        self.assertIn('"status": "unchanged"', f.getvalue())
+
+        # 4. Config file load failure exits 1
+        mock_load.side_effect = Exception("Config syntax error")
+        with self.assertRaises(SystemExit) as exc:
+            website_monitor.main(["-c", "bad_config.json"])
+        self.assertEqual(exc.exception.code, 1)
 
 
 if __name__ == "__main__":

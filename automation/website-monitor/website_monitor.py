@@ -11,8 +11,9 @@ import logging
 import os
 import sys
 from typing import Any, Dict, List, Optional, Tuple
-from bs4 import BeautifulSoup
+
 import requests
+from bs4 import BeautifulSoup
 
 # Standard User Agent to avoid basic bot blocks
 DEFAULT_HEADERS = {
@@ -99,7 +100,8 @@ def load_states(state_file: str) -> Dict[str, str]:
     if os.path.exists(state_file):
         try:
             with open(state_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data: Dict[str, str] = json.load(f)
+                return data
         except Exception as e:  # pylint: disable=broad-except
             logging.error("Failed to load states: %s", e)
     return {}
@@ -133,7 +135,8 @@ def load_config(config_file: str) -> List[Dict[str, Any]]:
     """
     try:
         with open(config_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data: List[Dict[str, Any]] = json.load(f)
+            return data
     except Exception as e:  # pylint: disable=broad-except
         logging.error("Failed to load config file: %s", e)
         raise
@@ -214,7 +217,7 @@ def run_monitor(  # pylint: disable=too-many-locals
     return results
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -253,7 +256,7 @@ def main() -> None:
         "-v", "--verbose", action="store_true", help="Enable verbose debug logs"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Configure logging
     log_level = logging.INFO if args.verbose else logging.WARNING
