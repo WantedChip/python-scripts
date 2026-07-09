@@ -5,6 +5,10 @@ on_created and on_moved are watchdog FileSystemEventHandler API callbacks,
 called dynamically by the watchdog observer framework.
 """
 
+# pylint: disable=pointless-statement
+# Pointless statements are intentional here to serve as a Vulture whitelist.
+
+
 from downloads_organizer import DownloadWatchHandler  # noqa: F401
 
 DownloadWatchHandler.on_created  # noqa: F821

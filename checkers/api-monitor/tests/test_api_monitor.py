@@ -2,17 +2,18 @@
 
 import datetime
 import os
-import sys
 import socket
-import requests
+import sys
 import unittest
 from unittest.mock import MagicMock, patch
+
+import requests
 
 # Workaround for hyphenated folder module import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # pylint: disable=import-error,wrong-import-position
-import api_monitor
+import api_monitor  # noqa: E402
 
 
 class TestApiMonitor(unittest.TestCase):
@@ -29,7 +30,10 @@ class TestApiMonitor(unittest.TestCase):
 
         # Mock wrap_socket and peer certificate dictionary
         mock_wrap_sock = MagicMock()
-        mock_create_context.return_value.wrap_socket.return_value.__enter__.return_value = mock_wrap_sock
+        mock_context_instance = mock_create_context.return_value
+        mock_context_instance.wrap_socket.return_value.__enter__.return_value = (
+            mock_wrap_sock
+        )
 
         future_date = datetime.datetime.utcnow() + datetime.timedelta(days=45)
         # Format like 'Nov 25 12:00:00 2026'
@@ -51,7 +55,10 @@ class TestApiMonitor(unittest.TestCase):
         mock_create_conn.return_value.__enter__.return_value = mock_sock
 
         mock_wrap_sock = MagicMock()
-        mock_create_context.return_value.wrap_socket.return_value.__enter__.return_value = mock_wrap_sock
+        mock_context_instance = mock_create_context.return_value
+        mock_context_instance.wrap_socket.return_value.__enter__.return_value = (
+            mock_wrap_sock
+        )
 
         warning_date = datetime.datetime.utcnow() + datetime.timedelta(days=10)
         date_str = warning_date.strftime("%b %d %H:%M:%S %Y")
@@ -68,11 +75,20 @@ class TestApiMonitor(unittest.TestCase):
         self, mock_check_ssl: MagicMock, mock_get: MagicMock
     ) -> None:
         """Test testing endpoint under fully healthy conditions."""
-        mock_check_ssl.return_value = {"status": "healthy", "days_left": 45, "error": None}
-        
+        mock_check_ssl.return_value = {
+            "status": "healthy",
+            "days_left": 45,
+            "error": None,
+        }
+
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"userId": 1, "id": 10, "title": "Test Title", "body": "Body Text"}
+        mock_response.json.return_value = {
+            "userId": 1,
+            "id": 10,
+            "title": "Test Title",
+            "body": "Body Text",
+        }
         mock_get.return_value = mock_response
 
         endpoint = {
@@ -100,7 +116,11 @@ class TestApiMonitor(unittest.TestCase):
         self, mock_check_ssl: MagicMock, mock_get: MagicMock
     ) -> None:
         """Test schema mismatch detection."""
-        mock_check_ssl.return_value = {"status": "healthy", "days_left": 45, "error": None}
+        mock_check_ssl.return_value = {
+            "status": "healthy",
+            "days_left": 45,
+            "error": None,
+        }
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -123,7 +143,6 @@ class TestApiMonitor(unittest.TestCase):
         self.assertTrue(report["status_ok"])
         self.assertFalse(report["schema_ok"])
         self.assertIn("JSON Schema Validation Error", report["errors"][0])
-
 
     def test_check_ssl_expiry_non_https(self) -> None:
         """Test check_ssl_expiry with non-HTTPS schemes."""
@@ -154,7 +173,10 @@ class TestApiMonitor(unittest.TestCase):
         mock_sock = MagicMock()
         mock_create_conn.return_value.__enter__.return_value = mock_sock
         mock_wrap_sock = MagicMock()
-        mock_create_context.return_value.wrap_socket.return_value.__enter__.return_value = mock_wrap_sock
+        mock_context_instance = mock_create_context.return_value
+        mock_context_instance.wrap_socket.return_value.__enter__.return_value = (
+            mock_wrap_sock
+        )
 
         # Case 1: no cert
         mock_wrap_sock.getpeercert.return_value = None
@@ -177,7 +199,10 @@ class TestApiMonitor(unittest.TestCase):
         mock_sock = MagicMock()
         mock_create_conn.return_value.__enter__.return_value = mock_sock
         mock_wrap_sock = MagicMock()
-        mock_create_context.return_value.wrap_socket.return_value.__enter__.return_value = mock_wrap_sock
+        mock_context_instance = mock_create_context.return_value
+        mock_context_instance.wrap_socket.return_value.__enter__.return_value = (
+            mock_wrap_sock
+        )
 
         # Case 1: expired date
         expired_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=5)
@@ -202,7 +227,11 @@ class TestApiMonitor(unittest.TestCase):
         self, mock_check_ssl: MagicMock, mock_post: MagicMock
     ) -> None:
         """Test test_endpoint sends a POST request with payload."""
-        mock_check_ssl.return_value = {"status": "skipped", "days_left": None, "error": None}
+        mock_check_ssl.return_value = {
+            "status": "skipped",
+            "days_left": None,
+            "error": None,
+        }
         mock_response = MagicMock()
         mock_response.status_code = 201
         mock_post.return_value = mock_response
@@ -218,7 +247,9 @@ class TestApiMonitor(unittest.TestCase):
         report = api_monitor.test_endpoint(endpoint)
         self.assertTrue(report["status_ok"])
         self.assertEqual(report["status_code"], 201)
-        mock_post.assert_called_once_with("http://example.com/api", json={"key": "value"}, headers=None, timeout=10)
+        mock_post.assert_called_once_with(
+            "http://example.com/api", json={"key": "value"}, headers=None, timeout=10
+        )
 
     @patch("requests.get")
     @patch("api_monitor.check_ssl_expiry")
@@ -226,7 +257,11 @@ class TestApiMonitor(unittest.TestCase):
         self, mock_check_ssl: MagicMock, mock_get: MagicMock
     ) -> None:
         """Test test_endpoint with latency, status mismatches and exceptions."""
-        mock_check_ssl.return_value = {"status": "healthy", "days_left": 45, "error": None}
+        mock_check_ssl.return_value = {
+            "status": "healthy",
+            "days_left": 45,
+            "error": None,
+        }
 
         # Case 1: Latency threshold and status mismatch
         mock_response = MagicMock()
@@ -248,7 +283,9 @@ class TestApiMonitor(unittest.TestCase):
         # Case 2: JSON decode failure in schema check
         mock_response_json_err = MagicMock()
         mock_response_json_err.status_code = 200
-        mock_response_json_err.json.side_effect = requests.exceptions.JSONDecodeError("not json", "", 0)
+        mock_response_json_err.json.side_effect = requests.exceptions.JSONDecodeError(
+            "not json", "", 0
+        )
         mock_get.return_value = mock_response_json_err
 
         endpoint_schema = {
@@ -268,6 +305,7 @@ class TestApiMonitor(unittest.TestCase):
     def test_run_monitor_yaml_json(self) -> None:
         """Test run_monitor with JSON/YAML config formats."""
         import tempfile
+
         # JSON config
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as json_tmp:
             json_tmp.write('{"endpoints": [{"name": "JSON endpoint", "url": ""}]}')
@@ -322,14 +360,18 @@ class TestApiMonitor(unittest.TestCase):
                 "ssl_status": "expired",
                 "ssl_days": -1,
                 "ssl_error": None,
-                "errors": ["Latency exceeded threshold", "Status code mismatch", "SSL Certificate is EXPIRED"],
-            }
+                "errors": [
+                    "Latency exceeded threshold",
+                    "Status code mismatch",
+                    "SSL Certificate is EXPIRED",
+                ],
+            },
         ]
 
         f = io.StringIO()
         with patch("sys.stdout", new=f):
             api_monitor.print_table(reports)
-        
+
         output = f.getvalue()
         self.assertIn("HEALTHY", output)
         self.assertIn("FAILED", output)
@@ -344,6 +386,7 @@ class TestApiMonitor(unittest.TestCase):
 
         # 2. Main execution with healthy results exits 0
         import io
+
         f = io.StringIO()
         with patch("api_monitor.run_monitor") as mock_run:
             mock_run.return_value = [
@@ -352,7 +395,7 @@ class TestApiMonitor(unittest.TestCase):
                     "latency_ok": True,
                     "schema_ok": True,
                     "ssl_status": "healthy",
-                    "errors": []
+                    "errors": [],
                 }
             ]
             with patch("sys.stdout", new=f):
@@ -375,7 +418,7 @@ class TestApiMonitor(unittest.TestCase):
                     "latency_ok": True,
                     "schema_ok": True,
                     "ssl_status": "healthy",
-                    "errors": ["Some HTTP error"]
+                    "errors": ["Some HTTP error"],
                 }
             ]
             f = io.StringIO()

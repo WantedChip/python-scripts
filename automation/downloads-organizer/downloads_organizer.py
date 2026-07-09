@@ -14,7 +14,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 # Optional watchdog integration
 try:
@@ -434,10 +434,16 @@ class FolderOrganizer:
 
 
 # FileSystem event handler for Watchdog mode
-if HAS_WATCHDOG:
-    BaseWatchHandler = FileSystemEventHandler
+if TYPE_CHECKING:
+
+    class BaseWatchHandler:  # pylint: disable=too-few-public-methods
+        """Stub class for static type resolution of watchdog events."""
+
 else:
-    BaseWatchHandler = object  # type: ignore
+    if HAS_WATCHDOG:
+        BaseWatchHandler = FileSystemEventHandler
+    else:
+        BaseWatchHandler = object
 
 
 class DownloadWatchHandler(BaseWatchHandler):  # pylint: disable=too-few-public-methods
@@ -503,10 +509,8 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
     observer = Observer()
     handler = DownloadWatchHandler(organizer)
     # Watch non-recursively to avoid monitoring already organized folders
-    observer.schedule(  # type: ignore[no-untyped-call]
-        handler, path=str(organizer.source), recursive=False
-    )
-    observer.start()  # type: ignore[no-untyped-call]
+    observer.schedule(handler, path=str(organizer.source), recursive=False)
+    observer.start()
 
     logging.info("Actively watching directory: %s", organizer.source)
     try:
@@ -514,7 +518,7 @@ def run_watch_mode(organizer: FolderOrganizer) -> None:
             time.sleep(1)
     except KeyboardInterrupt:
         logging.info("Stopping watch observer...")
-        observer.stop()  # type: ignore[no-untyped-call]
+        observer.stop()
     observer.join()
 
 
@@ -607,6 +611,8 @@ def parse_arguments() -> argparse.Namespace:
 
 def main() -> None:
     """Main program entry point."""
+    # pylint: disable=duplicate-code
+    # Standalone script design prioritized over sharing argparse/logging bootstrap.
     args = parse_arguments()
 
     log_level = logging.DEBUG if args.verbose else logging.INFO

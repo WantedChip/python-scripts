@@ -3,19 +3,20 @@
 # pylint: disable=wrong-import-position,import-error,missing-class-docstring
 # pylint: disable=missing-function-docstring,unused-import
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from env_auditor import (  # noqa: E402
     audit,
-    parse_env_file,
-    scan_source_for_usage,
-    parse_docker_compose_env_vars,
     find_docker_compose_files,
-    print_report,
     main,
+    parse_docker_compose_env_vars,
+    parse_env_file,
+    print_report,
+    scan_source_for_usage,
 )
 
 
@@ -209,7 +210,7 @@ def test_find_docker_compose_files(tmp_path: Path) -> None:
     d2.touch()
     not_d = tmp_path / "other.yml"
     not_d.touch()
-    
+
     files = find_docker_compose_files(str(tmp_path))
     basenames = [Path(f).name for f in files]
     assert "docker-compose.yml" in basenames
@@ -220,12 +221,13 @@ def test_find_docker_compose_files(tmp_path: Path) -> None:
 def test_print_report(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_report helper formatting."""
     from env_auditor import AuditResult
+
     res = AuditResult(
         undocumented=["UNDOC"],
         missing_locally=["MISSING"],
         unused=["UNUSED"],
         unknown=["UNKNOWN"],
-        docker_declared=["DOCKER_VAR"]
+        docker_declared=["DOCKER_VAR"],
     )
     print_report(res, ".env", ".env.example")
     captured = capsys.readouterr()
@@ -255,14 +257,19 @@ def test_main_cli_execution(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     example = tmp_path / ".env.example"
     example.touch()
     main(["--env", str(env), "--example", str(example), "--source", str(tmp_path)])
-    
+
     # 4. Audit with issues exits 1 when --fail-on-issues is provided
     env.write_text("SOME_VAR=123\n")
     with pytest.raises(SystemExit) as exc_info:
-        main([
-            "--env", str(env),
-            "--example", str(example),
-            "--source", str(tmp_path),
-            "--fail-on-issues"
-        ])
+        main(
+            [
+                "--env",
+                str(env),
+                "--example",
+                str(example),
+                "--source",
+                str(tmp_path),
+                "--fail-on-issues",
+            ]
+        )
     assert exc_info.value.code == 1

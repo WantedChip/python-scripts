@@ -4,21 +4,22 @@
 # pylint: disable=missing-function-docstring,unused-import,unused-variable
 import csv
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from csv_cleaner import (  # noqa: E402
-    detect_delimiter,
-    is_null,
-    infer_type,
-    matches_type,
     analyze_csv,
     clean_csv,
+    detect_delimiter,
     detect_encoding,
-    print_report,
+    infer_type,
+    is_null,
     main,
+    matches_type,
+    print_report,
 )
 
 
@@ -287,7 +288,6 @@ def test_clean_csv_drop_empty_cols(tmp_path: Path) -> None:
 
 def test_main_cli_execution(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Test main function CLI entry point scenarios."""
-    import os
 
     # 1. Nonexistent input file exits 1
     with pytest.raises(SystemExit) as exc_info:

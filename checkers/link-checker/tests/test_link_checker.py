@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import requests
 import pytest
+import requests
 
 # Ensure the parent directory is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -213,17 +213,17 @@ class TestScanLocalFiles:
 # ---------------------------------------------------------------------------
 # Additional coverage tests
 # ---------------------------------------------------------------------------
-import csv
-import json
-import logging
-from link_checker import (
+import csv  # noqa: E402
+import json  # noqa: E402
+
+from link_checker import (  # noqa: E402
     build_session,
     crawl_website,
-    run_checks,
-    print_report,
     export_report,
-    main,
+    print_report,
+    run_checks,
 )
+
 
 def test_build_session() -> None:
     """Test build_session configuration."""
@@ -246,14 +246,17 @@ def test_check_url_request_exception(mock_session_cls: MagicMock) -> None:
 def test_crawl_website_scenarios(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test crawl_website with various page contents and depth settings."""
     session = MagicMock()
-    
+
     # Page 1 (HTML): contains one internal link and one external link
     resp1 = MagicMock()
     resp1.status_code = 200
     resp1.url = "https://example.com/start"
     resp1.headers = {"content-type": "text/html"}
-    resp1.text = '<a href="https://example.com/page2">Page2</a> <a href="https://external.com">Ext</a>'
-    
+    resp1.text = (
+        '<a href="https://example.com/page2">Page2</a> '
+        '<a href="https://external.com">Ext</a>'
+    )
+
     # Page 2 (HTML): returns timeout
     def mock_get(url, *args, **kwargs):
         if url == "https://example.com/start":
@@ -261,12 +264,16 @@ def test_crawl_website_scenarios(monkeypatch: pytest.MonkeyPatch) -> None:
         elif url == "https://example.com/page2":
             raise requests.exceptions.Timeout("Timeout error")
         raise requests.exceptions.RequestException("Failed get")
-        
+
     session.get = mock_get
-    
+
     # 1. crawl with same_domain_only = True
     external, internal = crawl_website(
-        "https://example.com/start", session, timeout=5, max_depth=2, same_domain_only=True
+        "https://example.com/start",
+        session,
+        timeout=5,
+        max_depth=2,
+        same_domain_only=True,
     )
     assert len(external) == 1
     assert external[0] == ("https://external.com", "https://example.com/start")
@@ -279,38 +286,55 @@ def test_crawl_website_scenarios(monkeypatch: pytest.MonkeyPatch) -> None:
     # In this case, external.com is added to the crawl queue and crawled.
     # Page external.com throws RequestException
     external_any, internal_any = crawl_website(
-        "https://example.com/start", session, timeout=5, max_depth=0, same_domain_only=False
+        "https://example.com/start",
+        session,
+        timeout=5,
+        max_depth=0,
+        same_domain_only=False,
     )
     # Since depth is 1, it will crawl start, discover page2 and external.com,
     # but not crawl them because depth limit (1) is reached.
-    assert len(external_any) == 0 # everything goes to crawl queue
-    assert len(internal_any) == 1 # only start is crawled
+    assert len(external_any) == 0  # everything goes to crawl queue
+    assert len(internal_any) == 1  # only start is crawled
     assert internal_any[0].url == "https://example.com/start"
 
 
 def test_run_checks(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test run_checks thread pool executor execution."""
     session = MagicMock()
-    
+
     # Mock check_url
     def mock_check_url(url, source, sess, timeout):
         return LinkResult(url, 200, "ok", None, None, source)
-        
+
     monkeypatch.setattr("link_checker.check_url", mock_check_url)
-    
-    links = [("https://a.com", "file.md"), ("https://b.com", "file.md"), ("https://a.com", "another.md")]
+
+    links = [
+        ("https://a.com", "file.md"),
+        ("https://b.com", "file.md"),
+        ("https://a.com", "another.md"),
+    ]
     results = run_checks(links, session, 5, 2)
-    assert len(results) == 2 # deduplicated
+    assert len(results) == 2  # deduplicated
 
 
 def test_print_report(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_report helper."""
-    summary = build_summary([
-        LinkResult("https://ok.com", 200, "ok", None, None, "file.md"),
-        LinkResult("https://redirect.com", 301, "redirect", "https://new.com", None, "file.md"),
-        LinkResult("https://dead.com", 404, "dead", None, "Not Found", "file.md"),
-    ])
-    
+    summary = build_summary(
+        [
+            LinkResult("https://ok.com", 200, "ok", None, None, "file.md"),
+            LinkResult(
+                "https://redirect.com",
+                301,
+                "redirect",
+                "https://new.com",
+                None,
+                "file.md",
+            ),
+            LinkResult("https://dead.com", 404, "dead", None, "Not Found", "file.md"),
+        ]
+    )
+
     # verbose = False
     print_report(summary, verbose=False)
     captured = capsys.readouterr()
@@ -328,10 +352,10 @@ def test_export_report(tmp_path: Path) -> None:
     """Test export_report for json and csv formats."""
     results = [
         LinkResult("https://a.com", 200, "ok", None, None, "file.md"),
-        LinkResult("https://b.com", None, "timeout", None, "Timed out", "file.md")
+        LinkResult("https://b.com", None, "timeout", None, "Timed out", "file.md"),
     ]
     summary = build_summary(results)
-    
+
     # 1. JSON
     json_path = tmp_path / "report.json"
     export_report(summary, str(json_path), "json")
@@ -340,7 +364,7 @@ def test_export_report(tmp_path: Path) -> None:
     assert len(data) == 2
     assert data[0]["url"] == "https://a.com"
     assert data[1]["error_message"] == "Timed out"
-    
+
     # 2. CSV
     csv_path = tmp_path / "report.csv"
     export_report(summary, str(csv_path), "csv")
@@ -354,19 +378,26 @@ def test_export_report(tmp_path: Path) -> None:
 def test_main_cli_execution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test main function execution flow for local directory scan."""
     import link_checker
-    
+
     md = tmp_path / "test.md"
     md.write_text("[Link](https://a.com)")
-    
+
     # 1. Check local directory
-    args_local = ["--local", str(tmp_path), "--output", str(tmp_path / "out.json"), "--format", "json"]
-    
+    args_local = [
+        "--local",
+        str(tmp_path),
+        "--output",
+        str(tmp_path / "out.json"),
+        "--format",
+        "json",
+    ]
+
     # Mock run_checks to return dummy results
     def mock_run_checks(links_with_sources, session, timeout, workers):
         return [LinkResult("https://a.com", 200, "ok", None, None, str(md))]
-        
+
     monkeypatch.setattr(link_checker, "run_checks", mock_run_checks)
-    
+
     link_checker.main(args_local)
     assert (tmp_path / "out.json").exists()
 
@@ -379,8 +410,9 @@ def test_main_cli_execution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     # 3. Fail on dead links option exits 1 if dead links exist
     def mock_run_checks_dead(links_with_sources, session, timeout, workers):
         return [LinkResult("https://dead.com", 404, "dead", None, "Not Found", str(md))]
+
     monkeypatch.setattr(link_checker, "run_checks", mock_run_checks_dead)
-    
+
     args_fail = ["--local", str(tmp_path), "--fail-on-dead"]
     with pytest.raises(SystemExit) as exc_info:
         link_checker.main(args_fail)

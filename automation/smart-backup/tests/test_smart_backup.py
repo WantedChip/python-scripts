@@ -5,23 +5,24 @@
 import os
 import sys
 import time
-import pytest
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from smart_backup import (  # noqa: E402
     BackupManifest,
     FileRecord,
-    compute_checksum,
-    matches_exclusion,
-    load_manifest,
-    save_manifest,
-    collect_source_files,
-    run_backup,
-    verify_backup,
     apply_retention,
+    collect_source_files,
+    compute_checksum,
+    load_manifest,
     main,
+    matches_exclusion,
+    run_backup,
+    save_manifest,
+    verify_backup,
 )
 
 
@@ -252,7 +253,7 @@ def test_run_backup_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     dst = tmp_path / "dst"
     src.mkdir()
     dst.mkdir()
-    
+
     f = src / "fail.txt"
     f.touch()
 
@@ -283,11 +284,14 @@ def test_verify_backup_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     # 2. OSError during compute_checksum
     (dst / "data.txt").write_text("recreated")
     import builtins
+
     original_open = builtins.open
+
     def mock_open(file, *args, **kwargs):
         if "manifest" in str(file):
             return original_open(file, *args, **kwargs)
         raise OSError("Read error")
+
     monkeypatch.setattr(builtins, "open", mock_open)
     assert verify_backup(str(dst), "sha256") is False
 
@@ -297,7 +301,7 @@ def test_apply_retention(tmp_path: Path) -> None:
     # Retain for 5 days
     cutoff_old = tmp_path / "2026-01-01_backup"
     cutoff_old.mkdir()
-    
+
     recent = tmp_path / "2026-07-08_backup"
     recent.mkdir()
 

@@ -12,9 +12,9 @@ import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import jsonschema  # type: ignore[import-untyped]
+import jsonschema
 import yaml  # type: ignore[import-untyped]
-from jsonschema.validators import validator_for  # type: ignore[import-untyped]
+from jsonschema.validators import validator_for
 
 # isort: off
 from yaml.nodes import MappingNode  # type: ignore[import-untyped]

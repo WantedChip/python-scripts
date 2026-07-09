@@ -3,15 +3,16 @@
 import os
 import sys
 import tempfile
-import requests
 import unittest
 from unittest.mock import MagicMock, patch
+
+import requests
 
 # Workaround for hyphenated folder module import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # pylint: disable=import-error,wrong-import-position
-import website_monitor
+import website_monitor  # noqa: E402
 
 
 class TestWebsiteMonitor(unittest.TestCase):
@@ -26,7 +27,9 @@ class TestWebsiteMonitor(unittest.TestCase):
 
         html = website_monitor.fetch_page_content("https://example.com")
         self.assertEqual(html, "<html><body>Hello</body></html>")
-        mock_get.assert_called_once_with("https://example.com", headers=website_monitor.DEFAULT_HEADERS, timeout=10)
+        mock_get.assert_called_once_with(
+            "https://example.com", headers=website_monitor.DEFAULT_HEADERS, timeout=10
+        )
 
     def test_extract_section_text_valid_selector(self) -> None:
         """Test tag exclusion and clean text parsing."""
@@ -56,11 +59,15 @@ class TestWebsiteMonitor(unittest.TestCase):
         """Test firing webhook payloads."""
         mock_post.return_value = MagicMock(status_code=200)
         website_monitor.send_webhook("https://webhook.site/abc", {"content": "test"})
-        mock_post.assert_called_once_with("https://webhook.site/abc", json={"content": "test"}, timeout=10)
+        mock_post.assert_called_once_with(
+            "https://webhook.site/abc", json={"content": "test"}, timeout=10
+        )
 
     @patch("website_monitor.fetch_page_content")
     @patch("website_monitor.send_webhook")
-    def test_run_monitor_flow(self, mock_send_webhook: MagicMock, mock_fetch: MagicMock) -> None:
+    def test_run_monitor_flow(
+        self, mock_send_webhook: MagicMock, mock_fetch: MagicMock
+    ) -> None:
         """Test monitoring cycle (initialization, change, no change)."""
         # Load and verify states with temporary file
         with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f:
@@ -68,9 +75,18 @@ class TestWebsiteMonitor(unittest.TestCase):
 
         try:
             # 1. First run: should initialize
-            mock_fetch.return_value = "<html><body><main>Initial Content</main></body></html>"
-            targets = [{"name": "Test Site", "url": "https://test.com", "selector": "main", "webhook": "https://webhook.com"}]
-            
+            mock_fetch.return_value = (
+                "<html><body><main>Initial Content</main></body></html>"
+            )
+            targets = [
+                {
+                    "name": "Test Site",
+                    "url": "https://test.com",
+                    "selector": "main",
+                    "webhook": "https://webhook.com",
+                }
+            ]
+
             res1 = website_monitor.run_monitor(targets, temp_path)
             self.assertEqual(res1["https://test.com::main"]["status"], "initialized")
             mock_send_webhook.assert_not_called()
@@ -81,13 +97,14 @@ class TestWebsiteMonitor(unittest.TestCase):
             mock_send_webhook.assert_not_called()
 
             # 3. Third run: content modified, should trigger change status and webhook
-            mock_fetch.return_value = "<html><body><main>Modified Content</main></body></html>"
+            mock_fetch.return_value = (
+                "<html><body><main>Modified Content</main></body></html>"
+            )
             res3 = website_monitor.run_monitor(targets, temp_path)
             self.assertEqual(res3["https://test.com::main"]["status"], "changed")
             mock_send_webhook.assert_called_once()
         finally:
             os.remove(temp_path)
-
 
     @patch("requests.post")
     def test_send_webhook_exception(self, mock_post: MagicMock) -> None:
@@ -127,7 +144,9 @@ class TestWebsiteMonitor(unittest.TestCase):
             os.remove(temp_path)
 
     @patch("website_monitor.fetch_page_content")
-    def test_run_monitor_missing_url_and_exceptions(self, mock_fetch: MagicMock) -> None:
+    def test_run_monitor_missing_url_and_exceptions(
+        self, mock_fetch: MagicMock
+    ) -> None:
         """Test run_monitor with missing URL and target parsing exceptions."""
         targets = [{"name": "Missing URL Target"}]
         results = website_monitor.run_monitor(targets, "dummy.json")
@@ -159,12 +178,13 @@ class TestWebsiteMonitor(unittest.TestCase):
                 "name": "https://test.com",
                 "url": "https://test.com",
                 "selector": "body",
-                "status": "unchanged"
+                "status": "unchanged",
             }
         }
-        
+
         import io
         from unittest.mock import patch
+
         f = io.StringIO()
         with patch("sys.stdout", new=f):
             website_monitor.main(["-u", "https://test.com", "--json-output"])

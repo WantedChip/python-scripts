@@ -1,32 +1,41 @@
 """Unit tests for the JSON/YAML Config Validator script."""
 
-import json
 import os
 import sys
 import tempfile
-from typing import Generator
 from pathlib import Path
+
 import pytest
 
 # Add parent directory to sys.path to enable import of config_validator
 # config-validator is a kebab-case directory, so we import config_validator directly.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from config_validator import (
+from config_validator import (  # noqa: E402
     JSONPositionParser,
+    format_error_with_context,
+    load_schema,
+    locate_error_position,
+    main,
+    parse_and_track,
     parse_yaml_with_positions,
     validate_config,
-    locate_error_position,
-    format_error_with_context,
-    main,
-    load_schema,
-    parse_and_track,
 )
 
 
 def test_json_position_parser_valid() -> None:
     """Tests that the JSON position parser works for valid JSON files."""
-    json_data = '{\n  "name": "myapp",\n  "port": 8080,\n  "enabled": true,\n  "hosts": [\n    "localhost",\n    "127.0.0.1"\n  ]\n}'
+    json_data = (
+        "{\n"
+        '  "name": "myapp",\n'
+        '  "port": 8080,\n'
+        '  "enabled": true,\n'
+        '  "hosts": [\n'
+        '    "localhost",\n'
+        '    "127.0.0.1"\n'
+        "  ]\n"
+        "}"
+    )
     parser = JSONPositionParser(json_data)
     data, positions = parser.parse()
 
@@ -71,7 +80,15 @@ def test_json_position_parser_syntax_error() -> None:
 
 def test_yaml_position_parser_valid() -> None:
     """Tests that the YAML position parser works for valid YAML."""
-    yaml_data = "name: myapp\nport: 8080\nfeatures:\n  - oauth\n  - saml\nsettings:\n  debug: true\n"
+    yaml_data = (
+        "name: myapp\n"
+        "port: 8080\n"
+        "features:\n"
+        "  - oauth\n"
+        "  - saml\n"
+        "settings:\n"
+        "  debug: true\n"
+    )
     data, positions = parse_yaml_with_positions(yaml_data)
 
     assert data == {
@@ -194,7 +211,14 @@ def test_main_cli_success() -> None:
     """Tests CLI execution success with valid config and schema."""
     from config_validator import main
 
-    schema = '{\n  "type": "object",\n  "properties": {\n    "port": {"type": "integer"}\n  }\n}'
+    schema = (
+        "{\n"
+        '  "type": "object",\n'
+        '  "properties": {\n'
+        '    "port": {"type": "integer"}\n'
+        "  }\n"
+        "}"
+    )
     config = '{\n  "port": 8080\n}'
 
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as schema_file:
@@ -223,7 +247,14 @@ def test_main_cli_failure() -> None:
     """Tests CLI execution failure with invalid config."""
     from config_validator import main
 
-    schema = '{\n  "type": "object",\n  "properties": {\n    "port": {"type": "integer"}\n  }\n}'
+    schema = (
+        "{\n"
+        '  "type": "object",\n'
+        '  "properties": {\n'
+        '    "port": {"type": "integer"}\n'
+        "  }\n"
+        "}"
+    )
     config = '{\n  "port": "not-an-integer"\n}'
 
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as schema_file:
@@ -314,7 +345,10 @@ class DummyError:
 
 
 def test_locate_error_position_fallbacks() -> None:
-    """Test locate_error_position points to parent or default when path is not in position map."""
+    """Test locate_error_position points to parent or default when path is not
+
+    in position map.
+    """
     positions = {
         (): (1, 1),
         ("port", "key"): (3, 5),
@@ -341,9 +375,12 @@ def test_locate_error_position_fallbacks() -> None:
 
 
 def test_format_error_with_context_bounds() -> None:
-    """Test format_error_with_context handles color formatting and out of bounds lines."""
+    """Test format_error_with_context handles color formatting and out
+
+    of bounds lines.
+    """
     content = "line1\nline2\nline3"
-    
+
     # Target line exceeds total lines
     formatted = format_error_with_context(
         "test.json", content, 10, 1, "test err", "type", no_color=True
@@ -397,8 +434,7 @@ def test_main_cli_argument_errors(tmp_path: Path) -> None:
     bad_schema = tmp_path / "bad_schema.json"
     bad_schema.write_text('{"type": "invalid_type"}')
     config = tmp_path / "config.json"
-    config.write_text('{}')
+    config.write_text("{}")
     with pytest.raises(SystemExit) as exc:
         main(["-s", str(bad_schema), str(config)])
     assert exc.value.code == 2
-

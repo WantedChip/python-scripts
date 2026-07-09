@@ -2,10 +2,11 @@
 
 # pylint: disable=wrong-import-position,import-error,missing-class-docstring
 # pylint: disable=missing-function-docstring,unused-import,too-few-public-methods
-import sys
-import pytest
 import os
+import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -13,13 +14,13 @@ from folder_snapshot import (  # noqa: E402
     FileEntry,
     Snapshot,
     compute_checksum,
-    take_snapshot,
-    save_snapshot,
-    load_snapshot,
     diff_snapshots,
-    print_diff,
-    snapshot_current_state,
+    load_snapshot,
     main,
+    print_diff,
+    save_snapshot,
+    snapshot_current_state,
+    take_snapshot,
 )
 
 
@@ -183,7 +184,9 @@ def test_load_snapshot_errors(tmp_path: Path) -> None:
 
 def test_snapshot_current_state_errors() -> None:
     """Test snapshot_current_state exits 1 if the reference snapshot root is gone."""
-    snap = Snapshot(root="nonexistent_directory_123_abc", timestamp="T", algo="sha256", label="test")
+    snap = Snapshot(
+        root="nonexistent_directory_123_abc", timestamp="T", algo="sha256", label="test"
+    )
     with pytest.raises(SystemExit) as exc_info:
         snapshot_current_state(snap, "sha256", False)
     assert exc_info.value.code == 1
@@ -192,11 +195,17 @@ def test_snapshot_current_state_errors() -> None:
 def test_print_diff(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_diff helper output format."""
     from folder_snapshot import DiffResult
+
     diff = DiffResult(
         added=[FileEntry("added.txt", 100, 1000.0, "abc")],
         removed=[FileEntry("removed.txt", 200, 1000.0, "def")],
-        modified=[(FileEntry("mod.txt", 100, 1000.0, "abc"), FileEntry("mod.txt", 150, 1000.0, "xyz"))],
-        unchanged=10
+        modified=[
+            (
+                FileEntry("mod.txt", 100, 1000.0, "abc"),
+                FileEntry("mod.txt", 150, 1000.0, "xyz"),
+            )
+        ],
+        unchanged=10,
     )
     print_diff(diff, verbose=True)
     captured = capsys.readouterr()
@@ -218,7 +227,7 @@ def test_main_cli_execution(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     src.mkdir()
     (src / "file.txt").write_text("hello")
     snap_out = tmp_path / "snap.json"
-    
+
     main(["snapshot", "--root", str(src), "--output", str(snap_out)])
     assert snap_out.exists()
 

@@ -386,6 +386,8 @@ def parse_arguments() -> argparse.Namespace:
 # pylint: disable=too-many-locals
 def main() -> None:
     """Main execution function."""
+    # pylint: disable=duplicate-code
+    # Standalone script design prioritized over sharing argparse/logging bootstrap.
     args = parse_arguments()
 
     # Configure logging

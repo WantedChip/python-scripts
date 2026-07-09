@@ -10,7 +10,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
-import psutil  # type: ignore[import-untyped]
+import psutil
 
 
 def get_process_info(pid: int) -> Dict[str, Any]:

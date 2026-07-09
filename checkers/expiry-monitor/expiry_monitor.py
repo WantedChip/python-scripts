@@ -14,7 +14,7 @@ import sys
 from typing import Any, Dict, List, Optional
 
 import requests
-import whois  # type: ignore[import-untyped]
+import whois
 
 
 def get_ssl_expiry(domain: str, port: int = 443) -> Dict[str, Any]:

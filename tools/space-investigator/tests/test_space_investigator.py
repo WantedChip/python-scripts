@@ -2,24 +2,24 @@
 
 # pylint: disable=wrong-import-position,import-error,missing-class-docstring
 # pylint: disable=missing-function-docstring,unused-import
-import sys
-import pytest
-import os
-import json
 import csv
+import json
+import os
+import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from space_investigator import (  # noqa: E402
-    human_readable,
-    scan_directory,
-    FileEntry,
     DirectoryEntry,
+    FileEntry,
     ScanResult,
     export_report,
-    print_report,
+    human_readable,
     main,
+    scan_directory,
 )
 
 
@@ -121,7 +121,9 @@ class TestScanDirectory:
 # ---------------------------------------------------------------------------
 
 
-def test_scan_directory_oserror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_scan_directory_oserror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test scan_directory logs a warning and skips files failing os.getsize."""
     f = tmp_path / "test.txt"
     f.touch()
@@ -132,9 +134,7 @@ def test_scan_directory_oserror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(os.path, "getsize", mock_getsize)
 
-    result = scan_directory(
-        str(tmp_path), top_n=10, large_file_mb=1.0, exclude_dirs=()
-    )
+    result = scan_directory(str(tmp_path), top_n=10, large_file_mb=1.0, exclude_dirs=())
     assert result.total_files == 0
     assert result.total_bytes == 0
 
@@ -148,7 +148,7 @@ def test_export_report_formats(tmp_path: Path) -> None:
         top_files=[FileEntry("a.txt", 600), FileEntry("b.txt", 400)],
         top_dirs=[DirectoryEntry("sub", 1000, 2)],
         large_files=[FileEntry("a.txt", 600)],
-        extension_breakdown={".txt": 1000}
+        extension_breakdown={".txt": 1000},
     )
 
     # 1. JSON
@@ -190,10 +190,10 @@ def test_main_cli_execution(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     # 2. Valid directory runs scanning and prints report
     f = tmp_path / "a.py"
     f.write_text("print('hello')")
-    
+
     out_json = tmp_path / "out.json"
     main(["--root", str(tmp_path), "--output", str(out_json), "--format", "json"])
-    
+
     assert out_json.exists()
     captured = capsys.readouterr()
     assert "Disk Space Investigator" in captured.out

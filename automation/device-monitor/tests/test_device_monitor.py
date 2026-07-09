@@ -1,9 +1,9 @@
 """Unit tests for Local Network Device Monitor."""
 
 import os
+import subprocess
 import sys
 import tempfile
-import subprocess
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # pylint: disable=import-error,wrong-import-position
-import device_monitor
+import device_monitor  # noqa: E402
 
 
 class TestDeviceMonitor(unittest.TestCase):
@@ -19,8 +19,12 @@ class TestDeviceMonitor(unittest.TestCase):
 
     def test_get_oui(self) -> None:
         """Test MAC OUI prefix lookup."""
-        self.assertEqual(device_monitor.get_oui("b8:27:eb:11:22:33"), "Raspberry Pi Foundation")
-        self.assertEqual(device_monitor.get_oui("B8-27-EB-AA-BB-CC"), "Raspberry Pi Foundation")
+        self.assertEqual(
+            device_monitor.get_oui("b8:27:eb:11:22:33"), "Raspberry Pi Foundation"
+        )
+        self.assertEqual(
+            device_monitor.get_oui("B8-27-EB-AA-BB-CC"), "Raspberry Pi Foundation"
+        )
         self.assertEqual(device_monitor.get_oui("00:00:00:11:22:33"), "Unknown")
 
     @patch("socket.socket")
@@ -113,10 +117,11 @@ class TestDeviceMonitor(unittest.TestCase):
             device_monitor.save_state(temp_path, state)
             loaded = device_monitor.load_state(temp_path)
             self.assertIn("00:11:32:00:00:00", loaded["devices"])
-            self.assertEqual(loaded["devices"]["00:11:32:00:00:00"]["ip"], "192.168.1.5")
+            self.assertEqual(
+                loaded["devices"]["00:11:32:00:00:00"]["ip"], "192.168.1.5"
+            )
         finally:
             os.remove(temp_path)
-
 
     @patch("socket.socket")
     def test_get_local_ip_failure(self, mock_socket: MagicMock) -> None:
@@ -156,7 +161,7 @@ class TestDeviceMonitor(unittest.TestCase):
                     "192.168.1.1 b8:27:eb:11:22:33\n"
                     "192.168.1.2 c8-d7-19-11-22-33\n"
                     "224.0.0.1 01:00:5e:00:00:01\n"
-                )
+                ),
             )
             devices = device_monitor.parse_arp_table()
             self.assertEqual(len(devices), 2)
@@ -182,7 +187,10 @@ class TestDeviceMonitor(unittest.TestCase):
             os.remove(temp_path)
 
         # File does not exist
-        self.assertEqual(device_monitor.load_state("nonexistent_state.json"), {"devices": {}, "history": []})
+        self.assertEqual(
+            device_monitor.load_state("nonexistent_state.json"),
+            {"devices": {}, "history": []},
+        )
 
     def test_save_state_exception(self) -> None:
         """Test save_state handles exception gracefully."""
@@ -193,24 +201,40 @@ class TestDeviceMonitor(unittest.TestCase):
         """Test update_monitor prunes history when history_limit is exceeded."""
         state = {
             "devices": {},
-            "history": [{"timestamp": "2026-01-01T00:00:00", "event": "joined", "mac": "00:00:00:00:00:00", "ip": "1.1.1.1"}]
+            "history": [
+                {
+                    "timestamp": "2026-01-01T00:00:00",
+                    "event": "joined",
+                    "mac": "00:00:00:00:00:00",
+                    "ip": "1.1.1.1",
+                }
+            ],
         }
         active = [("192.168.1.10", "b8:27:eb:11:22:33")]
-        
-        # history limit is 1, so the join of Device B should prune the previous history item
+
+        # history limit is 1, so the join of Device B should prune the
+        # previous history item
         device_monitor.update_monitor(state, active, history_limit=1)
         self.assertEqual(len(state["history"]), 1)
         self.assertEqual(state["history"][0]["mac"], "b8:27:eb:11:22:33")
 
         # Test device rejoined (moving from offline to online)
         state_rejoin = {
-            "devices": {"b8:27:eb:11:22:33": {"ip": "192.168.1.10", "status": "offline", "vendor": "Raspberry Pi"}},
-            "history": []
+            "devices": {
+                "b8:27:eb:11:22:33": {
+                    "ip": "192.168.1.10",
+                    "status": "offline",
+                    "vendor": "Raspberry Pi",
+                }
+            },
+            "history": [],
         }
         changes = device_monitor.update_monitor(state_rejoin, active)
         self.assertEqual(len(changes), 1)
         self.assertEqual(changes[0]["event"], "joined")
-        self.assertEqual(state_rejoin["devices"]["b8:27:eb:11:22:33"]["status"], "online")
+        self.assertEqual(
+            state_rejoin["devices"]["b8:27:eb:11:22:33"]["status"], "online"
+        )
 
     def test_print_report(self) -> None:
         """Test print_report prints correct logs without errors."""
@@ -225,21 +249,36 @@ class TestDeviceMonitor(unittest.TestCase):
                     "last_seen": "2026-01-01T00:00:00",
                     "name": "Device 10",
                     "vendor": "Raspberry Pi",
-                    "status": "online"
+                    "status": "online",
                 }
             },
-            "history": []
+            "history": [],
         }
         changes = [
-            {"event": "joined", "ip": "192.168.1.10", "mac": "b8:27:eb:11:22:33", "vendor": "Raspberry Pi"},
-            {"event": "left", "ip": "192.168.1.10", "mac": "b8:27:eb:11:22:33", "vendor": "Raspberry Pi"},
-            {"event": "ip_changed", "mac": "b8:27:eb:11:22:33", "old_ip": "192.168.1.5", "new_ip": "192.168.1.10"}
+            {
+                "event": "joined",
+                "ip": "192.168.1.10",
+                "mac": "b8:27:eb:11:22:33",
+                "vendor": "Raspberry Pi",
+            },
+            {
+                "event": "left",
+                "ip": "192.168.1.10",
+                "mac": "b8:27:eb:11:22:33",
+                "vendor": "Raspberry Pi",
+            },
+            {
+                "event": "ip_changed",
+                "mac": "b8:27:eb:11:22:33",
+                "old_ip": "192.168.1.5",
+                "new_ip": "192.168.1.10",
+            },
         ]
 
         f = io.StringIO()
         with patch("sys.stdout", new=f):
             device_monitor.print_report(state, changes)
-        
+
         output = f.getvalue()
         self.assertIn("LOCAL NETWORK MONITOR REPORT", output)
         self.assertIn("ONLINE DEVICES", output)
@@ -250,7 +289,11 @@ class TestDeviceMonitor(unittest.TestCase):
     @patch("device_monitor.load_state")
     @patch("device_monitor.save_state")
     def test_main_cli(
-        self, mock_save: MagicMock, mock_load: MagicMock, mock_arp: MagicMock, mock_ping: MagicMock
+        self,
+        mock_save: MagicMock,
+        mock_load: MagicMock,
+        mock_arp: MagicMock,
+        mock_ping: MagicMock,
     ) -> None:
         """Test main CLI entry point."""
         mock_arp.return_value = [("192.168.1.10", "b8:27:eb:11:22:33")]
@@ -258,10 +301,13 @@ class TestDeviceMonitor(unittest.TestCase):
 
         import io
         from unittest.mock import patch
+
         f = io.StringIO()
         with patch("sys.stdout", new=f):
-            device_monitor.main(["-s", "192.168.1", "--state-file", "dummy.json", "--json-output"])
-        
+            device_monitor.main(
+                ["-s", "192.168.1", "--state-file", "dummy.json", "--json-output"]
+            )
+
         self.assertIn('"devices"', f.getvalue())
         mock_ping.assert_called_once()
         mock_save.assert_called_once()

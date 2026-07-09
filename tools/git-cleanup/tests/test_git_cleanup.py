@@ -2,21 +2,22 @@
 
 # pylint: disable=wrong-import-position,import-error,missing-class-docstring
 # pylint: disable=missing-function-docstring,subprocess-run-check
-import subprocess
 import os
-import pytest
+import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from git_cleanup import (  # noqa: E402
-    shannon_entropy,
     find_large_files,
-    scan_commits_for_secrets,
-    run_git,
     find_stale_branches,
     find_untracked_and_ignored,
+    run_git,
+    scan_commits_for_secrets,
+    shannon_entropy,
 )
 
 
@@ -163,45 +164,69 @@ def test_find_stale_branches_and_untracked(tmp_path: Path) -> None:
     """Test branch staleness and untracked file scanners in a live git repo."""
     # 1. Initialize git repo
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@test.com"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"], cwd=str(tmp_path), capture_output=True
+    )
 
     # 2. Add an initial commit on master
     f = tmp_path / "readme.txt"
     f.write_text("Hello")
     subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "commit", "-m", "initial commit"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "initial commit"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
 
     # 3. Create a stale branch (inactive/merged)
-    subprocess.run(["git", "checkout", "-b", "feature/merged"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "checkout", "-b", "feature/merged"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
     f2 = tmp_path / "feature.txt"
     f2.write_text("Feature")
     subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "commit", "-m", "feature commit"], cwd=str(tmp_path), capture_output=True)
-    
+    subprocess.run(
+        ["git", "commit", "-m", "feature commit"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
+
     # Merge it back to master
-    subprocess.run(["git", "checkout", "master"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "merge", "feature/merged"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "checkout", "master"], cwd=str(tmp_path), capture_output=True
+    )
+    subprocess.run(
+        ["git", "merge", "feature/merged"], cwd=str(tmp_path), capture_output=True
+    )
 
     # 4. Check branches
     stale_branches = find_stale_branches(str(tmp_path), stale_days=30)
     # feature/merged should be found because it is merged into HEAD
     names = [b.name for b in stale_branches]
     assert "feature/merged" in names
-    
+
     # 5. Check untracked and ignored
     untracked_file = tmp_path / "untracked.log"
     untracked_file.write_text("log")
-    
+
     # Create an ignored file
     git_ignore = tmp_path / ".gitignore"
     git_ignore.write_text("*.ignored\n")
     subprocess.run(["git", "add", ".gitignore"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "commit", "-m", "add gitignore"], cwd=str(tmp_path), capture_output=True)
-    
+    subprocess.run(
+        ["git", "commit", "-m", "add gitignore"], cwd=str(tmp_path), capture_output=True
+    )
+
     ignored_file = tmp_path / "file.ignored"
     ignored_file.write_text("ignored")
-    
+
     untracked, ignored = find_untracked_and_ignored(str(tmp_path))
     assert "untracked.log" in untracked
     # Depending on platform path separators
@@ -209,10 +234,12 @@ def test_find_stale_branches_and_untracked(tmp_path: Path) -> None:
     assert "file.ignored" in ignored_names
 
 
-def test_main_cli_execution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_main_cli_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test main execution with various arguments."""
     import git_cleanup
-    
+
     # 1. Non-existent path exits 1
     with pytest.raises(SystemExit) as exc_info:
         git_cleanup.main(["--repo", "nonexistent_path_123_abc"])
@@ -221,14 +248,22 @@ def test_main_cli_execution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cap
     # 2. Live repo execution check
     # Initialize a dummy git repo so it doesn't fail basic checks
     subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_path), capture_output=True)
-    
+    subprocess.run(
+        ["git", "config", "user.email", "test@test.com"],
+        cwd=str(tmp_path),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"], cwd=str(tmp_path), capture_output=True
+    )
+
     # Add a commit
     f = tmp_path / "init.txt"
     f.touch()
     subprocess.run(["git", "add", "."], cwd=str(tmp_path), capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "init"], cwd=str(tmp_path), capture_output=True
+    )
 
     git_cleanup.main(["--repo", str(tmp_path)])
     captured = capsys.readouterr()

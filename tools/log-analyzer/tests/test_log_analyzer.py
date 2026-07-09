@@ -10,7 +10,7 @@ import unittest
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # pylint: disable=import-error,wrong-import-position
-import log_analyzer
+import log_analyzer  # noqa: E402
 
 
 class TestLogAnalyzer(unittest.TestCase):
@@ -19,7 +19,9 @@ class TestLogAnalyzer(unittest.TestCase):
     def test_parse_timestamp(self) -> None:
         """Test timestamp parsing under normal and fallback conditions."""
         # Standard Python logging format
-        dt = log_analyzer.parse_timestamp("2026-07-08 12:00:00,123", "%Y-%m-%d %H:%M:%S,%f")
+        dt = log_analyzer.parse_timestamp(
+            "2026-07-08 12:00:00,123", "%Y-%m-%d %H:%M:%S,%f"
+        )
         self.assertIsNotNone(dt)
         self.assertEqual(dt.year, 2026)
         self.assertEqual(dt.month, 7)
@@ -28,7 +30,9 @@ class TestLogAnalyzer(unittest.TestCase):
         self.assertEqual(dt.microsecond, 123000)
 
         # Standard Common Log format timezone stripping fallback
-        dt = log_analyzer.parse_timestamp("10/Oct/2000:13:55:36 -0700", "%d/%b/%Y:%H:%M:%S %z")
+        dt = log_analyzer.parse_timestamp(
+            "10/Oct/2000:13:55:36 -0700", "%d/%b/%Y:%H:%M:%S %z"
+        )
         self.assertIsNotNone(dt)
         self.assertEqual(dt.year, 2000)
         self.assertEqual(dt.month, 10)
@@ -59,8 +63,14 @@ class TestLogAnalyzer(unittest.TestCase):
         self.assertEqual(fmt_name, "python")
 
         combined_lines = [
-            '127.0.0.1 - - [08/Jul/2026:12:00:00 +0000] "GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"',
-            '127.0.0.1 - - [08/Jul/2026:12:00:01 +0000] "POST /login HTTP/1.1" 500 234 "-" "Mozilla/5.0"',
+            (
+                "127.0.0.1 - - [08/Jul/2026:12:00:00 +0000] "
+                '"GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"'
+            ),
+            (
+                "127.0.0.1 - - [08/Jul/2026:12:00:01 +0000] "
+                '"POST /login HTTP/1.1" 500 234 "-" "Mozilla/5.0"'
+            ),
         ]
         fmt_name, _ = log_analyzer.auto_detect_format(combined_lines)
         self.assertEqual(fmt_name, "combined")
@@ -70,7 +80,9 @@ class TestLogAnalyzer(unittest.TestCase):
         # Generate constant timestamps (no spikes)
         base = datetime.datetime(2026, 7, 8, 12, 0, 0)
         timestamps = [base + datetime.timedelta(seconds=i * 10) for i in range(100)]
-        spikes = log_analyzer.analyze_spikes(timestamps, window_minutes=5, threshold_stddev=2.0)
+        spikes = log_analyzer.analyze_spikes(
+            timestamps, window_minutes=5, threshold_stddev=2.0
+        )
         self.assertEqual(len(spikes), 0)
 
         # Generate a big cluster (spike)
@@ -78,13 +90,17 @@ class TestLogAnalyzer(unittest.TestCase):
         # Normal traffic: 1 event every 10 seconds (6 per minute) for 15 minutes
         for minute in range(15):
             for sec in range(0, 60, 10):
-                spiky_timestamps.append(base + datetime.timedelta(minutes=minute, seconds=sec))
+                spiky_timestamps.append(
+                    base + datetime.timedelta(minutes=minute, seconds=sec)
+                )
         # Spike traffic: 100 events in minute 5
         for _ in range(100):
             spiky_timestamps.append(base + datetime.timedelta(minutes=5, seconds=12))
 
         spiky_timestamps.sort()
-        spikes = log_analyzer.analyze_spikes(spiky_timestamps, window_minutes=1, threshold_stddev=2.0)
+        spikes = log_analyzer.analyze_spikes(
+            spiky_timestamps, window_minutes=1, threshold_stddev=2.0
+        )
         self.assertGreater(len(spikes), 0)
         # The spike bucket (minute 5) should be in the results
         spike_starts = [s[0] for s in spikes]
@@ -111,7 +127,9 @@ class TestLogAnalyzer(unittest.TestCase):
             self.assertEqual(summary["warnings"], 1)
 
             errors = results["errors"]
-            self.assertEqual(len(errors), 1)  # Two connection errors normalized to one group
+            self.assertEqual(
+                len(errors), 1
+            )  # Two connection errors normalized to one group
             self.assertEqual(errors[0]["count"], 2)
             self.assertEqual(errors[0]["normalized"], "fail connection <HEX>")
             self.assertEqual(errors[0]["sample"], "fail connection 0x12")
@@ -126,7 +144,9 @@ class TestLogAnalyzer(unittest.TestCase):
 
     def test_auto_detect_format_none(self) -> None:
         """Test auto_detect_format returns None on unrecognized formats."""
-        fmt, pat = log_analyzer.auto_detect_format(["random line", "another random line"])
+        fmt, pat = log_analyzer.auto_detect_format(
+            ["random line", "another random line"]
+        )
         self.assertIsNone(fmt)
         self.assertIsNone(pat)
 
@@ -148,6 +168,7 @@ class TestLogAnalyzer(unittest.TestCase):
         """Test HTTP status code conversion when level_idx is 0."""
         # 200 -> INFO, 404 -> WARNING, 500 -> ERROR
         import re
+
         pat = re.compile(log_analyzer.LOG_FORMATS["common"][0])
         with tempfile.NamedTemporaryFile("w", delete=False) as tmp:
             tmp.write(
@@ -158,7 +179,11 @@ class TestLogAnalyzer(unittest.TestCase):
             temp_path = tmp.name
 
         try:
-            entries = list(log_analyzer.read_log_file(temp_path, pat, 2, 0, 4, "%d/%b/%Y:%H:%M:%S %z"))
+            entries = list(
+                log_analyzer.read_log_file(
+                    temp_path, pat, 2, 0, 4, "%d/%b/%Y:%H:%M:%S %z"
+                )
+            )
             self.assertEqual(len(entries), 3)
             self.assertEqual(entries[0]["level"], "INFO")
             self.assertEqual(entries[1]["level"], "WARNING")
@@ -167,12 +192,20 @@ class TestLogAnalyzer(unittest.TestCase):
             os.remove(temp_path)
 
     def test_analyze_spikes_edge_cases(self) -> None:
-        """Test analyze_spikes handling empty list and standard deviation equals zero."""
+        """Test analyze_spikes handling empty list and standard deviation
+
+        equals zero.
+        """
         self.assertEqual(log_analyzer.analyze_spikes([], 5, 2.0), [])
-        
+
         # Zero standard deviation (identical volume in all buckets)
         now = datetime.datetime.now()
-        timestamps = [now, now, now + datetime.timedelta(minutes=10), now + datetime.timedelta(minutes=10)]
+        timestamps = [
+            now,
+            now,
+            now + datetime.timedelta(minutes=10),
+            now + datetime.timedelta(minutes=10),
+        ]
         self.assertEqual(log_analyzer.analyze_spikes(timestamps, 5, 2.0), [])
 
     def test_analyze_log_errors(self) -> None:
@@ -184,14 +217,14 @@ class TestLogAnalyzer(unittest.TestCase):
         """Test print_report prints correct logs without errors."""
         import io
         from unittest.mock import patch
-        
+
         results = {
             "summary": {
                 "file_path": "test.log",
                 "total_lines": 100,
                 "parsed_lines": 90,
                 "errors": 5,
-                "warnings": 10
+                "warnings": 10,
             },
             "errors": [
                 {
@@ -200,7 +233,7 @@ class TestLogAnalyzer(unittest.TestCase):
                     "sample": "error message",
                     "first_seen": "2026-01-01T00:00:00",
                     "last_seen": "2026-01-01T00:05:00",
-                    "lines": [1, 2, 3]
+                    "lines": [1, 2, 3],
                 }
             ],
             "spikes": [
@@ -208,15 +241,15 @@ class TestLogAnalyzer(unittest.TestCase):
                     "start": "2026-01-01T00:00:00",
                     "end": "2026-01-01T00:05:00",
                     "count": 5,
-                    "stddevs_above": 3.5
+                    "stddevs_above": 3.5,
                 }
-            ]
+            ],
         }
-        
+
         f = io.StringIO()
-        with patch('sys.stdout', new=f):
+        with patch("sys.stdout", new=f):
             log_analyzer.print_report(results)
-        
+
         output = f.getvalue()
         self.assertIn("LOG ANALYSIS REPORT", output)
         self.assertIn("TOP ERROR GROUPS", output)
@@ -235,7 +268,8 @@ class TestLogAnalyzer(unittest.TestCase):
             temp_path = tmp.name
 
         try:
-            # Succeeded run does not call sys.exit, so it completes without raising SystemExit
+            # Succeeded run does not call sys.exit, so it completes
+            # without raising SystemExit
             log_analyzer.main([temp_path, "--type", "python", "--json-output"])
         finally:
             os.remove(temp_path)

@@ -1,21 +1,24 @@
 """Unit tests for Process Port Inspector."""
 
 import collections
+import io
 import os
 import sys
-import io
 import unittest
-import psutil
 from unittest.mock import MagicMock, patch
+
+import psutil
 
 # Workaround for hyphenated folder module import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # pylint: disable=import-error,wrong-import-position
-import port_inspector
+import port_inspector  # noqa: E402
 
 # Define connection named tuple similar to psutil's structure
-sconn = collections.namedtuple("sconn", ["fd", "family", "type", "laddr", "raddr", "status", "pid"])
+sconn = collections.namedtuple(
+    "sconn", ["fd", "family", "type", "laddr", "raddr", "status", "pid"]
+)
 addr = collections.namedtuple("addr", ["ip", "port"])
 
 
@@ -98,7 +101,9 @@ class TestPortInspector(unittest.TestCase):
 
     @patch("psutil.Process")
     @patch("psutil.wait_procs")
-    def test_terminate_process(self, mock_wait_procs: MagicMock, mock_process_cls: MagicMock) -> None:
+    def test_terminate_process(
+        self, mock_wait_procs: MagicMock, mock_process_cls: MagicMock
+    ) -> None:
         """Test soft and force termination of processes."""
         mock_proc = MagicMock()
         mock_process_cls.return_value = mock_proc
@@ -120,7 +125,6 @@ class TestPortInspector(unittest.TestCase):
         self.assertTrue(result_force)
         mock_proc.terminate.assert_not_called()
         mock_proc.kill.assert_called_once()
-
 
     def test_get_process_info_system_idle(self) -> None:
         """Test get_process_info for system idle process (PID 0)."""
@@ -151,7 +155,9 @@ class TestPortInspector(unittest.TestCase):
         self.assertEqual(info2["user"], "Access Denied")
 
     @patch("psutil.Process")
-    def test_get_process_info_no_such_process(self, mock_process_cls: MagicMock) -> None:
+    def test_get_process_info_no_such_process(
+        self, mock_process_cls: MagicMock
+    ) -> None:
         """Test get_process_info when process does not exist."""
         mock_process_cls.side_effect = psutil.NoSuchProcess(3333)
         info = port_inspector.get_process_info(3333)
@@ -175,7 +181,7 @@ class TestPortInspector(unittest.TestCase):
         """Test soft termination fails and prompt/force kill is executed."""
         mock_proc = MagicMock()
         mock_process_cls.return_value = mock_proc
-        
+
         # Soft terminate returns alive process, force kill succeeds (returns gone)
         mock_wait_procs.side_effect = [([], [mock_proc]), ([mock_proc], [])]
 
@@ -260,7 +266,6 @@ class TestPortInspector(unittest.TestCase):
             port_inspector.main(["-p", "80", "--kill", "--force"])
         self.assertEqual(exc.exception.code, 0)
         mock_terminate.assert_called_with(4444, force=True)
-
 
         # Let's run it directly
         f2 = io.StringIO()
