@@ -459,7 +459,7 @@ def apply_retention(dest_root: str, keep_days: int, dry_run: bool) -> None:
         keep_days: Number of days to retain.
         dry_run: If True, only report what would be deleted.
     """
-    cutoff = datetime.utcnow() - timedelta(days=keep_days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=keep_days)
     iso_re = re.compile(r"^(\d{4}-\d{2}-\d{2})")
     deleted = 0
 
@@ -470,7 +470,9 @@ def apply_retention(dest_root: str, keep_days: int, dry_run: bool) -> None:
         if not m:
             continue
         try:
-            folder_date = datetime.strptime(m.group(1), "%Y-%m-%d")
+            folder_date = datetime.strptime(m.group(1), "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
         except ValueError:
             continue
         if folder_date < cutoff:
