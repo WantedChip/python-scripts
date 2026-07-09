@@ -4,6 +4,10 @@ Queries SSL certificates and WHOIS registrar records for domains
 to track expiration dates and trigger warnings/critical alerts.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import datetime
 import json

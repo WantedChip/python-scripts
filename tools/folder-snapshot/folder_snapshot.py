@@ -6,6 +6,10 @@ and compares two snapshots — or a snapshot against the current live state —
 to show what was added, removed, or modified.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import fnmatch
 import hashlib

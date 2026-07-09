@@ -5,6 +5,10 @@ Performs a multi-threaded ping sweep to refresh the ARP cache,
 then parses the system ARP table to detect joins, leaves, and IP changes.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import concurrent.futures
 import datetime

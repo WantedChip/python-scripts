@@ -4,6 +4,10 @@ Parses large log files, groups repeated errors, detects frequency spikes,
 and summarizes the most important failures.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import collections
 import datetime

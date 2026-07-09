@@ -4,6 +4,10 @@ Tests HTTP endpoints for status codes, latency thresholds, JSON schemas,
 and SSL certificate expiration warnings.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import datetime
 import json

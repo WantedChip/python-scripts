@@ -6,6 +6,10 @@ checksums. Supports exclusion rules, retention policies, dry-run mode,
 and post-backup integrity verification.
 """
 
+# pylint: disable=duplicate-code
+# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+
+
 import argparse
 import fnmatch
 import hashlib
