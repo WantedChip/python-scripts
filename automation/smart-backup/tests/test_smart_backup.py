@@ -298,22 +298,26 @@ def test_verify_backup_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
 
 def test_apply_retention(tmp_path: Path) -> None:
     """Test retention policy clears old backup subdirectories by name date."""
-    # Retain for 5 days
-    cutoff_old = tmp_path / "2026-01-01_backup"
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    old_date = (now - timedelta(days=10)).strftime("%Y-%m-%d")
+    recent_date = (now - timedelta(days=2)).strftime("%Y-%m-%d")
+
+    cutoff_old = tmp_path / f"{old_date}_backup"
     cutoff_old.mkdir()
 
-    recent = tmp_path / "2026-07-08_backup"
+    recent = tmp_path / f"{recent_date}_backup"
     recent.mkdir()
 
     not_a_backup = tmp_path / "not-a-date"
     not_a_backup.mkdir()
 
-    # Retention keep_days is calculated from datetime.utcnow().
-    # Let's mock cutoff to be older than 2026-01-01
-    apply_retention(str(tmp_path), keep_days=1, dry_run=False)
+    # Retain for 5 days
+    apply_retention(str(tmp_path), keep_days=5, dry_run=False)
 
-    # 2026-01-01 is old, so it should be deleted.
-    # 2026-07-08 is recent, so it should keep it.
+    # old_date is 10 days ago (older than 5), so it should be deleted.
+    # recent_date is 2 days ago (newer than 5), so it should be kept.
     # non-dated should be skipped.
     assert not cutoff_old.exists()
     assert recent.exists()
