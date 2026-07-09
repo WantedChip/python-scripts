@@ -18,9 +18,10 @@ import os
 import re
 import sys
 import uuid
+from typing import Dict, List, Optional, Tuple
+
 # pylint: disable=broad-exception-caught,too-many-branches,too-many-statements
 # pylint: disable=too-many-locals,too-many-nested-blocks,raise-missing-from
-from typing import List, Tuple, Dict, Optional
 
 
 def parse_args(args_list: Optional[List[str]] = None) -> argparse.Namespace:
@@ -156,14 +157,14 @@ def clean_dates_in_stem(stem: str, date_format: str) -> str:
         The normalized filename stem.
     """
 
-    def replace_year_first(match: re.Match) -> str:
+    def replace_year_first(match: re.Match[str]) -> str:
         y_str, m_str, d_str = match.groups()
         y, m, d = int(y_str), int(m_str), int(d_str)
         if 1 <= m <= 12 and 1 <= d <= 31:
             return f"{y:04d}-{m:02d}-{d:02d}"
-        return match.group(0)
+        return str(match.group(0))
 
-    def replace_year_last(match: re.Match) -> str:
+    def replace_year_last(match: re.Match[str]) -> str:
         part1_str, part2_str, y_str = match.groups()
         p1, p2, y = int(part1_str), int(part2_str), int(y_str)
         if date_format == "MDY":
@@ -172,7 +173,7 @@ def clean_dates_in_stem(stem: str, date_format: str) -> str:
             d, m = p1, p2
         if 1 <= m <= 12 and 1 <= d <= 31:
             return f"{y:04d}-{m:02d}-{d:02d}"
-        return match.group(0)
+        return str(match.group(0))
 
     # Year-first: e.g., 2023-05-12, 2023.5.2, 2023_05_12, 2023 05 12
     stem = re.sub(
@@ -493,15 +494,15 @@ def execute_undo(history_file_path: str, target_dir: str) -> None:
                 "Undo validation failed: The following files to be undone "
                 "do not exist on disk:\n"
             )
-            for f in missing_files:
-                sys.stderr.write(f"  - {f}\n")
+            for fpath in missing_files:
+                sys.stderr.write(f"  - {fpath}\n")
         if existing_srcs:
             sys.stderr.write(
                 "Undo validation failed: The following original paths "
                 "already exist on disk (and are not part of the undo plan):\n"
             )
-            for f in existing_srcs:
-                sys.stderr.write(f"  - {f}\n")
+            for fpath in existing_srcs:
+                sys.stderr.write(f"  - {fpath}\n")
         sys.exit(1)
 
     # Perform undo in reverse order

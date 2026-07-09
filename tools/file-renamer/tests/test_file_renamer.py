@@ -447,3 +447,150 @@ def test_dry_run_preview(temp_workspace, capstdout):
 def capstdout(capsys):
     """Fixture to capture stdout."""
     return capsys
+
+
+def test_parse_args_mutually_exclusive() -> None:
+    """Test --lower and --upper mutually exclusive validation."""
+    with pytest.raises(SystemExit):
+        file_renamer.parse_args(["--lower", "--upper"])
+
+
+def test_parse_args_invalid_number_format() -> None:
+    """Test invalid --number-format validation."""
+    with pytest.raises(SystemExit):
+        file_renamer.parse_args(["--number", "--number-format", "{invalid}"])
+
+
+def test_collect_files_oserror(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test collect_files handling OSError when scanning directory."""
+    def mock_scandir(path):
+        raise OSError("Permission denied")
+    monkeypatch.setattr(os, "scandir", mock_scandir)
+    with pytest.raises(SystemExit):
+        file_renamer.collect_files("dummy_dir", "*", None, False, "dummy_history")
+
+
+def test_execute_undo_validation_failures(temp_workspace) -> None:
+    """Test execute_undo handling various validation failures."""
+    # 1. History file does not exist
+    with pytest.raises(SystemExit):
+        file_renamer.execute_undo("nonexistent_hist.json", str(temp_workspace))
+
+    # 2. History file has bad json
+    bad_json_file = temp_workspace / "bad_hist.json"
+    bad_json_file.write_text("bad json")
+    with pytest.raises(SystemExit):
+        file_renamer.execute_undo(str(bad_json_file), str(temp_workspace))
+
+    # 3. Already undone
+    undone_file = temp_workspace / "undone_hist.json"
+    undone_file.write_text(json.dumps({"undone": True}))
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.execute_undo(str(undone_file), str(temp_workspace))
+    assert exc_info.value.code == 0
+
+    # 4. No renames recorded
+    empty_file = temp_workspace / "empty_hist.json"
+    empty_file.write_text(json.dumps({"undone": False, "renames": []}))
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.execute_undo(str(empty_file), str(temp_workspace))
+    assert exc_info.value.code == 0
+
+    # 5. Missing files to undo (dest file missing on disk)
+    missing_file_hist = temp_workspace / "missing_file_hist.json"
+    missing_file_hist.write_text(json.dumps({
+        "undone": False,
+        "renames": [{"src": "orig.txt", "dest": "missing.txt"}]
+    }))
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.execute_undo(str(missing_file_hist), str(temp_workspace))
+    assert exc_info.value.code == 1
+
+    # 6. Original target file already exists
+    collision_hist = temp_workspace / "collision_hist.json"
+    collision_hist.write_text(json.dumps({
+        "undone": False,
+        "renames": [{"src": "exists_orig.txt", "dest": "current.txt"}]
+    }))
+    # create both orig and dest files to trigger collision check 2
+    (temp_workspace / "exists_orig.txt").write_text("original content")
+    (temp_workspace / "current.txt").write_text("current content")
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.execute_undo(str(collision_hist), str(temp_workspace))
+    assert exc_info.value.code == 1
+
+
+def test_undo_phase1_failure_rollback(temp_workspace, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test undo phase 1 failure rollback when renaming dest -> temp."""
+    f1 = temp_workspace / "current.txt"
+    f1.write_text("current")
+    
+    history_file = temp_workspace / "history.json"
+    history_file.write_text(json.dumps({
+        "undone": False,
+        "renames": [{"src": "original.txt", "dest": "current.txt"}]
+    }))
+
+    def mock_rename(*args, **kwargs):
+        raise OSError("Phase 1 undo rename failed")
+    monkeypatch.setattr(os, "rename", mock_rename)
+
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.execute_undo(str(history_file), str(temp_workspace))
+    assert exc_info.value.code == 1
+    assert f1.exists()
+
+
+def test_main_cli_execution_errors(temp_workspace, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test main function handling various errors and confirmation prompts."""
+    # 1. Invalid target directory
+    with pytest.raises(SystemExit):
+        file_renamer.main(["-d", "nonexistent_directory_xyz_123"])
+
+    # 2. Conflicts detected
+    f1 = temp_workspace / "a.txt"
+    f1.write_text("content")
+    f2 = temp_workspace / "b.txt"
+    f2.write_text("content")
+    # Will rename both to the same file (many-to-one)
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.main(["-d", str(temp_workspace), "--match", "*.txt", "--regex-find", ".*", "--regex-replace", "same_name"])
+    assert exc_info.value.code == 1
+
+    # 3. User confirmation - No/N
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    f3 = temp_workspace / "c.txt"
+    f3.write_text("content")
+    with pytest.raises(SystemExit) as exc_info:
+        file_renamer.main(["-d", str(temp_workspace), "--match", "c.txt", "--upper"])
+    assert exc_info.value.code == 0
+    assert f3.exists()
+    assert "c.txt" in os.listdir(temp_workspace)
+
+    # 4. User confirmation - Yes/Y
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    file_renamer.main(["-d", str(temp_workspace), "--match", "c.txt", "--upper"])
+    assert "C.txt" in os.listdir(temp_workspace)
+    assert "c.txt" not in os.listdir(temp_workspace)
+
+
+def test_main_cli_sorting_mtime(temp_workspace) -> None:
+    """Test main function with sorting by modification time."""
+    import time
+    f1 = temp_workspace / "a.txt"
+    f1.write_text("A")
+    time.sleep(0.02)
+    f2 = temp_workspace / "b.txt"
+    f2.write_text("B")
+    
+    # Run with sort mtime and numbering
+    file_renamer.main([
+        "-d", str(temp_workspace),
+        "--match", "*.txt",
+        "--sort", "mtime",
+        "--number",
+        "--number-format", "{num}_{name}",
+        "--force"
+    ])
+    assert "001_a.txt" in os.listdir(temp_workspace)
+    assert "002_b.txt" in os.listdir(temp_workspace)
