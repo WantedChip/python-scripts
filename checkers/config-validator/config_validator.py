@@ -10,12 +10,18 @@ import logging
 import os
 import re
 import sys
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import jsonschema
-import yaml
-from jsonschema.validators import validator_for
-from yaml.nodes import MappingNode, ScalarNode, SequenceNode
+import jsonschema  # type: ignore[import-untyped]
+import yaml  # type: ignore[import-untyped]
+from jsonschema.validators import validator_for  # type: ignore[import-untyped]
+
+# isort: off
+from yaml.nodes import MappingNode  # type: ignore[import-untyped]
+from yaml.nodes import ScalarNode
+from yaml.nodes import SequenceNode
+
+# isort: on
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -56,9 +62,7 @@ class JSONPositionParser:
         if self.pos < self.length:
             line, col = self._get_line_col(self.pos)
             char = self.text[self.pos]
-            raise ValueError(
-                f"Unexpected character {char!r} at line {line}, col {col}"
-            )
+            raise ValueError(f"Unexpected character {char!r} at line {line}, col {col}")
         return val, self.positions
 
     def _skip_whitespace(self) -> None:
@@ -96,9 +100,7 @@ class JSONPositionParser:
             self.pos += 4
             return None
 
-        raise ValueError(
-            f"Unexpected character {char!r} at line {line}, col {col}"
-        )
+        raise ValueError(f"Unexpected character {char!r} at line {line}, col {col}")
 
     def _parse_string(self) -> str:
         """Parses a double-quoted JSON string with escape sequence support."""
@@ -132,7 +134,7 @@ class JSONPositionParser:
                 elif next_char == "t":
                     chars.append("\t")
                 elif next_char == "u":
-                    hex_str = self.text[self.pos + 2:self.pos + 6]
+                    hex_str = self.text[self.pos + 2 : self.pos + 6]  # noqa: E203
                     if len(hex_str) < 4:
                         raise ValueError("Invalid unicode escape")
                     chars.append(chr(int(hex_str, 16)))
@@ -148,7 +150,8 @@ class JSONPositionParser:
     def _parse_number(self) -> Union[int, float]:
         """Parses a JSON number using standard regex pattern."""
         match = re.match(
-            r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", self.text[self.pos:]
+            r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?",
+            self.text[self.pos :],  # noqa: E203
         )
         if not match:
             line, col = self._get_line_col(self.pos)
@@ -189,9 +192,7 @@ class JSONPositionParser:
                 )
         return result
 
-    def _parse_object(
-        self, path: Tuple[Union[str, int], ...]
-    ) -> Dict[str, Any]:
+    def _parse_object(self, path: Tuple[Union[str, int], ...]) -> Dict[str, Any]:
         """Parses a JSON object, checking for duplicates and tracking keys."""
         self.pos += 1  # skip '{'
         result: Dict[str, Any] = {}
@@ -277,13 +278,13 @@ def parse_yaml_with_positions(
         if isinstance(node, ScalarNode):
             return loader.construct_object(node)
         if isinstance(node, SequenceNode):
-            result = []
+            seq_result = []
             for idx, item_node in enumerate(node.value):
                 val = construct_and_track(item_node, path + (idx,))
-                result.append(val)
-            return result
+                seq_result.append(val)
+            return seq_result
         if isinstance(node, MappingNode):
-            result: Dict[str, Any] = {}
+            map_result: Dict[str, Any] = {}
             for key_node, value_node in node.value:
                 key = loader.construct_object(key_node)
                 if key_node.start_mark:
@@ -292,7 +293,7 @@ def parse_yaml_with_positions(
                         key_node.start_mark.column + 1,
                     )
 
-                if key in result:
+                if key in map_result:
                     line = key_node.start_mark.line + 1
                     col = key_node.start_mark.column + 1
                     raise ValueError(
@@ -301,8 +302,8 @@ def parse_yaml_with_positions(
                     )
 
                 val = construct_and_track(value_node, path + (key,))
-                result[key] = val
-            return result
+                map_result[key] = val
+            return map_result
         return None
 
     data = construct_and_track(node)
@@ -510,7 +511,7 @@ def validate_config(
     return formatted_errors
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """The main entry point for the config validator CLI."""
     parser = argparse.ArgumentParser(
         description="JSON/YAML Config Validator with highly readable linter errors."
@@ -537,7 +538,7 @@ def main() -> None:
         help="One or more JSON/YAML configuration files to validate.",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Verify files exist
     if not os.path.isfile(args.schema):

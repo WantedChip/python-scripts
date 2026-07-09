@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 from typing import Generator
+from pathlib import Path
 import pytest
 
 # Add parent directory to sys.path to enable import of config_validator
@@ -17,6 +18,9 @@ from config_validator import (
     validate_config,
     locate_error_position,
     format_error_with_context,
+    main,
+    load_schema,
+    parse_and_track,
 )
 
 
@@ -242,4 +246,159 @@ def test_main_cli_failure() -> None:
     finally:
         os.remove(schema_path)
         os.remove(config_path)
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage tests
+# ---------------------------------------------------------------------------
+def test_json_position_parser_errors() -> None:
+    """Test JSONPositionParser raises ValueError for various invalid syntaxes."""
+    # Empty input
+    with pytest.raises(ValueError, match="Empty input"):
+        JSONPositionParser("").parse()
+
+    # Unexpected character at top level
+    with pytest.raises(ValueError, match="Unexpected character"):
+        JSONPositionParser("{}{}").parse()
+
+    # Unterminated string
+    with pytest.raises(ValueError, match="Unterminated string"):
+        JSONPositionParser('"hello').parse()
+
+    # Unterminated escape sequence
+    with pytest.raises(ValueError, match="Unterminated escape sequence"):
+        JSONPositionParser('"hello\\').parse()
+
+    # Invalid unicode escape
+    with pytest.raises(ValueError, match="Invalid unicode escape"):
+        JSONPositionParser('"\\u12"').parse()
+
+    # Invalid number format
+    with pytest.raises(ValueError, match="Invalid number format"):
+        JSONPositionParser("-abc").parse()
+
+    # Unterminated array
+    with pytest.raises(ValueError, match="Unterminated array"):
+        JSONPositionParser("[1, 2").parse()
+
+    # Invalid array separator
+    with pytest.raises(ValueError, match="Expected ',' or ']'"):
+        JSONPositionParser("[1 2]").parse()
+
+    # Expected string key in object
+    with pytest.raises(ValueError, match="Expected string key"):
+        JSONPositionParser("{1: 2}").parse()
+
+    # Expected ':' after key
+    with pytest.raises(ValueError, match="Expected ':'"):
+        JSONPositionParser('{"a" 2}').parse()
+
+    # Unterminated object
+    with pytest.raises(ValueError, match="Unterminated object"):
+        JSONPositionParser('{"a": 2').parse()
+
+
+def test_parse_yaml_with_positions_edge_cases() -> None:
+    """Test parse_yaml_with_positions under different node scenarios."""
+    # Empty node
+    data, positions = parse_yaml_with_positions("")
+    assert data is None
+    assert positions == {}
+
+
+class DummyError:
+    def __init__(self, absolute_path: list, validator: str, message: str) -> None:
+        self.absolute_path = absolute_path
+        self.validator = validator
+        self.message = message
+
+
+def test_locate_error_position_fallbacks() -> None:
+    """Test locate_error_position points to parent or default when path is not in position map."""
+    positions = {
+        (): (1, 1),
+        ("port", "key"): (3, 5),
+    }
+
+    # 1. Required missing field mapping
+    err = DummyError([], "required", "'port' is a required property")
+    assert locate_error_position(err, positions) == (3, 5)
+
+    # 2. Key matching fallback
+    err2 = DummyError(["port"], "type", "invalid")
+    assert locate_error_position(err2, positions) == (3, 5)
+
+    # 3. Parent path fallback
+    positions_parent = {
+        ("server",): (2, 4),
+    }
+    err3 = DummyError(["server", "host"], "type", "invalid")
+    assert locate_error_position(err3, positions_parent) == (2, 4)
+
+    # 4. Default to top of file
+    err4 = DummyError(["nonexistent"], "type", "invalid")
+    assert locate_error_position(err4, {}) == (1, 1)
+
+
+def test_format_error_with_context_bounds() -> None:
+    """Test format_error_with_context handles color formatting and out of bounds lines."""
+    content = "line1\nline2\nline3"
+    
+    # Target line exceeds total lines
+    formatted = format_error_with_context(
+        "test.json", content, 10, 1, "test err", "type", no_color=True
+    )
+    assert "Validation Error [type]" in formatted
+
+    # Color output enabled
+    formatted_color = format_error_with_context(
+        "test.json", content, 2, 2, "test err", "type", no_color=False
+    )
+    assert "\033[91m" in formatted_color
+
+
+def test_parse_and_track_fallback() -> None:
+    """Test parse_and_track falls back on generic or unrecognized extensions."""
+    data_json, _ = parse_and_track("config.txt", '{"port": 80}')
+    assert data_json == {"port": 80}
+
+    data_yaml, _ = parse_and_track("config.txt", "port: 80\n")
+    assert data_yaml == {"port": 80}
+
+
+def test_load_schema_failure() -> None:
+    """Test load_schema raises RuntimeError on invalid JSON/YAML."""
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tmp:
+        tmp.write("invalid content {")
+        tmp_name = tmp.name
+
+    try:
+        with pytest.raises(RuntimeError):
+            load_schema(tmp_name)
+    finally:
+        os.remove(tmp_name)
+
+
+def test_main_cli_argument_errors(tmp_path: Path) -> None:
+    """Test main function CLI validation errors (missing files or bad schemas)."""
+    # 1. Schema file not found
+    with pytest.raises(SystemExit) as exc:
+        main(["-s", "nonexistent_schema.json", "config.json"])
+    assert exc.value.code == 2
+
+    # 2. Config file not found
+    schema = tmp_path / "schema.json"
+    schema.write_text('{"type": "object"}')
+    with pytest.raises(SystemExit) as exc:
+        main(["-s", str(schema), "nonexistent_config.json"])
+    assert exc.value.code == 2
+
+    # 3. Invalid schema exits 2
+    bad_schema = tmp_path / "bad_schema.json"
+    bad_schema.write_text('{"type": "invalid_type"}')
+    config = tmp_path / "config.json"
+    config.write_text('{}')
+    with pytest.raises(SystemExit) as exc:
+        main(["-s", str(bad_schema), str(config)])
+    assert exc.value.code == 2
 
