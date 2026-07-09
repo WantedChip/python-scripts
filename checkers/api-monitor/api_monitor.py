@@ -13,10 +13,11 @@ import ssl
 import sys
 import time
 import urllib.parse
-from typing import Any, Dict, List
-import jsonschema
+from typing import Any, Dict, List, Optional
+
+import jsonschema  # type: ignore[import-untyped]
 import requests
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
 def check_ssl_expiry(url: str, warn_days: int = 15) -> Dict[str, Any]:
@@ -53,7 +54,7 @@ def check_ssl_expiry(url: str, warn_days: int = 15) -> Dict[str, Any]:
 
                 # Example format: 'Nov 25 12:00:00 2026 GMT'
                 not_after_str = cert.get("notAfter")
-                if not not_after_str:
+                if not isinstance(not_after_str, str):
                     return {
                         "status": "error",
                         "days_left": None,
@@ -85,7 +86,10 @@ def check_ssl_expiry(url: str, warn_days: int = 15) -> Dict[str, Any]:
         return {"status": "error", "days_left": None, "error": str(e)}
 
 
-def test_endpoint(endpoint: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disable=too-many-locals,too-many-statements
+def test_endpoint(
+    endpoint: Dict[str, Any],
+) -> Dict[str, Any]:
+    # pylint: disable=too-many-locals,too-many-statements
     """Tests a single endpoint.
 
     Args:
@@ -155,8 +159,7 @@ def test_endpoint(endpoint: Dict[str, Any]) -> Dict[str, Any]:  # pylint: disabl
         if latency > latency_threshold:
             report["latency_ok"] = False
             report["errors"].append(
-                f"Latency exceeded threshold: "
-                f"{latency}ms > {latency_threshold}ms"
+                f"Latency exceeded threshold: " f"{latency}ms > {latency_threshold}ms"
             )
 
         # Status check
@@ -257,7 +260,7 @@ def print_table(reports: List[Dict[str, Any]]) -> None:
     print("=" * 77)
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description=(
@@ -278,7 +281,7 @@ def main() -> None:
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Configure logging
     log_level = logging.INFO if args.verbose else logging.WARNING
