@@ -258,3 +258,201 @@ def test_quarantine_collision(tmp_path: Path) -> None:
     assert renamed_file.read_bytes() == b"data"
     # Original existing file is untouched
     assert existing_q_file.read_bytes() == b"existing_data"
+
+
+def test_format_size_extreme() -> None:
+    """Tests formatting very large size (ZB)."""
+    assert format_size(1024**7) == "1024.00 ZB"
+
+
+def test_scan_directories_nonexistent(caplog: pytest.LogCaptureFixture) -> None:
+    """Tests scan_directories with a non-existent path."""
+    import logging
+    with caplog.at_level(logging.WARNING):
+        res = scan_directories([Path("nonexistent_path_xyz")])
+        assert not res
+        assert "Path does not exist" in caplog.text
+
+
+def test_scan_directories_exclude_input(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    """Tests scan_directories excluding the direct input path."""
+    import logging
+    f = tmp_path / "file.txt"
+    f.touch()
+    with caplog.at_level(logging.DEBUG):
+        res = scan_directories([f], exclude_patterns=["*.txt"])
+        assert not res
+        assert "Excluding input path" in caplog.text
+
+
+def test_scan_directories_single_file(tmp_path: Path) -> None:
+    """Tests scan_directories with direct file paths."""
+    f1 = tmp_path / "f1.txt"
+    f1.write_bytes(b"hello")
+    f2 = tmp_path / "f2.txt"
+    f2.write_bytes(b"world")
+    
+    # Direct file scanning
+    res = scan_directories([f1, f2], min_size=6) # larger than actual size
+    assert not res
+    
+    res = scan_directories([f1, f2], min_size=3)
+    assert len(res[5]) == 2
+
+
+def test_scan_directories_resolve_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests scan_directories handling OSError during resolve/stat."""
+    f = tmp_path / "f.txt"
+    f.touch()
+    
+    def mock_resolve(*args, **kwargs):
+        raise OSError("Access Denied")
+        
+    monkeypatch.setattr(Path, "resolve", mock_resolve)
+    res = scan_directories([f])
+    assert not res
+
+
+def test_scan_directories_walk_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests scan_directories handling OSError during directory walk file check."""
+    dir1 = tmp_path / "dir1"
+    dir1.mkdir()
+    f1 = dir1 / "f1.txt"
+    f1.touch()
+
+    # Throw error when resolving path
+    original_resolve = Path.resolve
+    def mock_resolve(self, *args, **kwargs):
+        if self.name == "f1.txt":
+            raise OSError("Access Denied")
+        return original_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", mock_resolve)
+    res = scan_directories([dir1])
+    assert not res
+
+
+def test_find_duplicates_edge_cases(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests find_duplicates when files fails to hash or list length is 1."""
+    # 1. Size group has <= 1 file
+    res = find_duplicates({10: [Path("f1.txt")]})
+    assert res == ([], 0)
+
+    # 2. Hash function throws OSError
+    f1 = tmp_path / "f1.txt"
+    f1.write_bytes(b"data")
+    f2 = tmp_path / "f2.txt"
+    f2.write_bytes(b"data")
+    
+    def mock_calculate_hash(file_path, hash_algo="sha256", chunk_size=65536):
+        raise OSError("Hash error")
+        
+    monkeypatch.setattr("duplicate_finder.calculate_hash", mock_calculate_hash)
+    groups, wasted = find_duplicates({4: [f1, f2]})
+    assert not groups
+    assert wasted == 0
+
+
+def test_quarantine_folder_creation_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests quarantine_duplicates handling failure to create quarantine dir."""
+    f1 = tmp_path / "f1.txt"
+    f1.write_bytes(b"data")
+    f2 = tmp_path / "f2.txt"
+    f2.write_bytes(b"data")
+    
+    groups = [(4, "hash", f1, [f2])]
+    
+    def mock_mkdir(*args, **kwargs):
+        raise OSError("Dir create error")
+        
+    monkeypatch.setattr(Path, "mkdir", mock_mkdir)
+    res = quarantine_duplicates(groups, [tmp_path], tmp_path / "quarantine")
+    assert res == 0
+
+
+def test_quarantine_outside_roots(tmp_path: Path) -> None:
+    """Tests quarantining duplicates that do not belong to any scan root."""
+    scan_root = tmp_path / "scan"
+    scan_root.mkdir()
+    
+    # f1 in scan_root, f2 is outside scan_root
+    f1 = scan_root / "f1.txt"
+    f1.write_bytes(b"data")
+    f2 = tmp_path / "outside.txt"
+    f2.write_bytes(b"data")
+    
+    groups = [(4, "hash", f1.resolve(), [f2.resolve()])]
+    quarantine_root = tmp_path / "quarantine"
+    
+    moved = quarantine_duplicates(groups, [scan_root], quarantine_root, dry_run=False)
+    assert moved == 1
+    assert not f2.exists()
+    assert (quarantine_root / "outside.txt").exists()
+
+
+def test_quarantine_shutil_move_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests quarantine_duplicates handling OSError during shutil.move."""
+    f1 = tmp_path / "f1.txt"
+    f1.write_bytes(b"data")
+    f2 = tmp_path / "f2.txt"
+    f2.write_bytes(b"data")
+    
+    groups = [(4, "hash", f1, [f2])]
+    
+    def mock_move(src, dst):
+        raise OSError("Move error")
+        
+    monkeypatch.setattr("shutil.move", mock_move)
+    moved = quarantine_duplicates(groups, [tmp_path], tmp_path / "quarantine")
+    assert moved == 0
+
+
+def test_main_cli_no_duplicates(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """Tests the main function when no duplicates are found."""
+    import duplicate_finder
+    
+    class DummyArgs:
+        paths = [Path(".")]
+        quarantine = None
+        dry_run = False
+        hash = "sha256"
+        min_size = 0
+        strategy = "shortest-path"
+        exclude = []
+        verbose = False
+        
+    monkeypatch.setattr(duplicate_finder, "parse_arguments", lambda: DummyArgs())
+    monkeypatch.setattr(duplicate_finder, "scan_directories", lambda *a, **k: {})
+    
+    duplicate_finder.main()
+    captured = capsys.readouterr()
+    assert "No duplicate files found." in captured.out
+
+
+def test_main_cli_with_duplicates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """Tests the main function when duplicates are found and quarantined."""
+    import duplicate_finder
+    
+    f1 = tmp_path / "f1.txt"
+    f1.write_bytes(b"hello")
+    f2 = tmp_path / "f2.txt"
+    f2.write_bytes(b"hello")
+    
+    class DummyArgs:
+        paths = [tmp_path]
+        quarantine = tmp_path / "quarantine"
+        dry_run = False
+        hash = "sha256"
+        min_size = 0
+        strategy = "shortest-path"
+        exclude = []
+        verbose = True
+        
+    monkeypatch.setattr(duplicate_finder, "parse_arguments", lambda: DummyArgs())
+    
+    duplicate_finder.main()
+    captured = capsys.readouterr()
+    assert "Duplicate Files Report" in captured.out
+    assert "Total duplicate groups: 1" in captured.out
+    assert "Result: 1 of 1 duplicate files moved." in captured.out
+

@@ -15,10 +15,10 @@ import shutil
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 
-def format_size(size_in_bytes: int) -> str:
+def format_size(size_in_bytes: Union[int, float]) -> str:
     """Formats bytes into a human-readable string (e.g., KB, MB, GB).
 
     Args:
@@ -92,7 +92,7 @@ def should_exclude(path: Path, exclude_patterns: List[str]) -> bool:
 def scan_directories(
     paths: List[Path],
     min_size: int = 0,
-    exclude_patterns: List[str] = None,
+    exclude_patterns: Optional[List[str]] = None,
 ) -> Dict[int, List[Path]]:
     """Scans directories recursively and groups regular files by their size.
 
@@ -135,9 +135,7 @@ def scan_directories(
         for root, dirs, files in os.walk(path):
             # Prune directories in-place to avoid walking into excluded folders
             dirs[:] = [
-                d
-                for d in dirs
-                if not should_exclude(Path(root) / d, exclude_patterns)
+                d for d in dirs if not should_exclude(Path(root) / d, exclude_patterns)
             ]
 
             for file in files:
