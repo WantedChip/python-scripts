@@ -299,7 +299,7 @@ def crawl_website(
     session: requests.Session,
     timeout: int,
     max_depth: int,
-    same_domain_only: bool,  # pylint: disable=unused-argument
+    same_domain_only: bool,
 ) -> Tuple[List[Tuple[str, str]], List[LinkResult]]:
     """BFS-crawl a website collecting all links.
 
@@ -317,7 +317,7 @@ def crawl_website(
     base_domain = parsed_start.netloc
 
     visited: Set[str] = set()
-    queue: collections.deque = collections.deque([(start_url, 0)])
+    queue: collections.deque[Tuple[str, int]] = collections.deque([(start_url, 0)])
     external_links: List[Tuple[str, str]] = []
     crawl_results: List[LinkResult] = []
 
@@ -379,8 +379,11 @@ def crawl_website(
                     continue
                 if parsed.netloc == base_domain:
                     queue.append((href, depth + 1))
-                else:
+                elif same_domain_only:
                     external_links.append((href, url))
+                else:
+                    # Follow external links too when same_domain_only is False
+                    queue.append((href, depth + 1))
 
         except requests.exceptions.Timeout:
             crawl_results.append(
