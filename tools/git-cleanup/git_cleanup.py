@@ -13,12 +13,13 @@ import logging
 import math
 import os
 import re
-import subprocess
+import subprocess  # nosec B404 — spawns trusted git, shell=False
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Dict, List, Optional, Set, Tuple
+
 # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ DEFAULT_STALE_DAYS: int = 90
 DEFAULT_ENTROPY_THRESHOLD: float = 4.5
 
 # Secret patterns (value-only, not key names) — high-signal, low FP
-SECRET_PATTERNS: List[Tuple[str, re.Pattern]] = [
+SECRET_PATTERNS: List[Tuple[str, re.Pattern[str]]] = [
     ("AWS Access Key", re.compile(r"AKIA[0-9A-Z]{16}")),
     (
         "AWS Secret Key",
@@ -139,7 +140,7 @@ class CleanupReport:
 
 def run_git(
     args: List[str], cwd: str, check: bool = True
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess[str]:
     """Run a git command and return the result.
 
     Args:
@@ -155,14 +156,16 @@ def run_git(
     """
     cmd = ["git"] + args
     try:
-        return subprocess.run(
-            cmd,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=check,
+        return (
+            subprocess.run(  # nosec B603 — cmd is ["git"] + trusted args, shell=False
+                cmd,
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=check,
+            )
         )
     except subprocess.CalledProcessError as exc:
         logger.error("git command failed: %s\n%s", " ".join(cmd), exc.stderr)
@@ -330,7 +333,7 @@ def scan_commits_for_secrets(
     commits = [c for c in log_result.stdout.strip().splitlines() if c]
 
     findings: List[SecretFinding] = []
-    seen_keys: set = set()  # (pattern_name, file_path) to deduplicate
+    seen_keys: Set[Tuple[str, str]] = set()  # (pattern_name, file_path) to deduplicate
 
     for commit in commits:
         diff_result = run_git(
@@ -438,7 +441,7 @@ def print_report(report: CleanupReport, args: argparse.Namespace) -> None:
             if b.days_since_commit >= args.stale_days:
                 flags.append(f"{b.days_since_commit}d old")
             flag_str = ", ".join(flags)
-            print(f"  {b.name:<40} [{flag_str}]")
+            print(f"  {b.name:<40} {b.last_commit_date[:10]}  [{flag_str}]")
     else:
         print("  ✅ No stale branches found.")
     print()
@@ -503,8 +506,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description=(
-            "Git Repo Cleanup Tool — find bloat, stale branches, "
-            "junk, and secrets."
+            "Git Repo Cleanup Tool — find bloat, stale branches, " "junk, and secrets."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
