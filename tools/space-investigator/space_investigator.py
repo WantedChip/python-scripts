@@ -41,11 +41,6 @@ class FileEntry:
     path: str
     size_bytes: int
 
-    @property
-    def size_mb(self) -> float:
-        """Return size in megabytes."""
-        return self.size_bytes / (1024 * 1024)
-
 
 @dataclass
 class DirectoryEntry:
@@ -60,11 +55,6 @@ class DirectoryEntry:
     path: str
     total_bytes: int
     file_count: int
-
-    @property
-    def total_mb(self) -> float:
-        """Return size in megabytes."""
-        return self.total_bytes / (1024 * 1024)
 
 
 @dataclass
@@ -107,7 +97,7 @@ def human_readable(size_bytes: int) -> str:
     for unit in ("B", "KB", "MB", "GB", "TB"):
         if abs(size_bytes) < 1024.0:
             return f"{size_bytes:.2f} {unit}"
-        size_bytes //= 1024  # type: ignore[assignment]
+        size_bytes //= 1024
     return f"{size_bytes:.2f} PB"
 
 
@@ -318,6 +308,9 @@ def export_report(result: ScanResult, output_path: str, fmt: str) -> None:
             lines.append(f"  {human_readable(d.total_bytes):>10}  {d.path}")
         with open(output_path, "w", encoding="utf-8") as fh:
             fh.write("\n".join(lines))
+    else:
+        logger.error("Unknown export format '%s' — not exporting.", fmt)
+        return
 
     logger.info("Report exported to %s", output_path)
 
