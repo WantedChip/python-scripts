@@ -105,8 +105,12 @@ def detect_encoding(path: str) -> str:
     """
     with open(path, "rb") as fh:
         raw = fh.read(65536)
-    result = chardet.detect(raw)
-    return result.get("encoding") or "utf-8"
+    try:
+        raw.decode("utf-8")
+        return "utf-8"
+    except UnicodeDecodeError:
+        result = chardet.detect(raw)
+        return result.get("encoding") or "utf-8"
 
 
 def detect_delimiter(sample: str) -> str:
