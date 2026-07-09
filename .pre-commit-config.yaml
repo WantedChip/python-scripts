@@ -36,7 +36,8 @@ repos:
     rev: v2.11
     hooks:
       - id: vulture
-        exclude: (^|/)tests/
+        pass_filenames: false
+        args: [".", "--exclude=**/tests/**,**/.venv/**,**/.git/**"]
 
   # pylint needs the project's own runtime deps importable to resolve
   # third-party imports correctly, so it stays a local/system hook rather
