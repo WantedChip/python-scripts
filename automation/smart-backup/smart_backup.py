@@ -7,7 +7,6 @@ and post-backup integrity verification.
 """
 
 import argparse
-# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
 import fnmatch
 import hashlib
 import json
@@ -19,7 +18,9 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ class BackupManifest:
     algo: str
     files: List[FileRecord] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
         return {
             "timestamp": self.timestamp,
@@ -93,21 +94,21 @@ class BackupManifest:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BackupManifest":
+    def from_dict(cls, data: Dict[str, Any]) -> "BackupManifest":
         """Deserialize from dictionary."""
         manifest = cls(
-            timestamp=data["timestamp"],
-            source=data["source"],
-            destination=data["destination"],
-            algo=data.get("algo", DEFAULT_HASH_ALGO),
+            timestamp=str(data["timestamp"]),
+            source=str(data["source"]),
+            destination=str(data["destination"]),
+            algo=str(data.get("algo", DEFAULT_HASH_ALGO)),
         )
         manifest.files = [
             FileRecord(
-                rel_path=f["rel_path"],
-                size_bytes=f["size_bytes"],
-                mtime=f["mtime"],
-                checksum=f["checksum"],
-                algo=f.get("algo", manifest.algo),
+                rel_path=str(f["rel_path"]),
+                size_bytes=int(f["size_bytes"]),
+                mtime=float(f["mtime"]),
+                checksum=str(f["checksum"]),
+                algo=str(f.get("algo", manifest.algo)),
             )
             for f in data.get("files", [])
         ]
@@ -329,8 +330,8 @@ def run_backup(
                     skipped += 1
                 # Still record to manifest for dry-run completeness
                 checksum = (
-                    prev_manifest.files[0].checksum
-                    if not needs_copy and previous.get(rel_path)
+                    previous[rel_path].checksum
+                    if not needs_copy and rel_path in previous
                     else ""
                 )
                 manifest.files.append(

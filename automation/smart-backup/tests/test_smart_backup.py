@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -19,6 +20,8 @@ from smart_backup import (  # noqa: E402
     collect_source_files,
     run_backup,
     verify_backup,
+    apply_retention,
+    main,
 )
 
 
@@ -225,3 +228,116 @@ class TestVerifyBackup:
         (dst / "data.txt").write_text("tampered!")
         ok = verify_backup(str(dst), "sha256")
         assert ok is False
+
+
+# ---------------------------------------------------------------------------
+# Additional coverage tests
+# ---------------------------------------------------------------------------
+def test_load_manifest_errors(tmp_path: Path) -> None:
+    """Test load_manifest handles malformed JSON or missing keys."""
+    bad_manifest = tmp_path / "bad_manifest.json"
+    bad_manifest.write_text("invalid json{")
+    assert load_manifest(str(bad_manifest)) is None
+
+
+def test_compute_checksum_oserror() -> None:
+    """Test compute_checksum raises OSError if file cannot be read."""
+    with pytest.raises(OSError):
+        compute_checksum("nonexistent_file_for_checksum_123.bin")
+
+
+def test_run_backup_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test run_backup logs an error if source files trigger an OSError."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    
+    f = src / "fail.txt"
+    f.touch()
+
+    # Mock os.path.getsize to raise OSError
+    def mock_getsize(path: str) -> int:
+        raise OSError("Permission denied")
+
+    monkeypatch.setattr(os.path, "getsize", mock_getsize)
+
+    manifest = run_backup(str(src), str(dst), [], "mtime", "sha256", False)
+    assert len(manifest.files) == 0
+
+
+def test_verify_backup_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test verify_backup behavior on missing files or checksum read errors."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "data.txt").write_text("original")
+
+    run_backup(str(src), str(dst), [], "checksum", "sha256", False)
+
+    # 1. Missing file in destination
+    os.remove(str(dst / "data.txt"))
+    assert verify_backup(str(dst), "sha256") is False
+
+    # 2. OSError during compute_checksum
+    (dst / "data.txt").write_text("recreated")
+    import builtins
+    original_open = builtins.open
+    def mock_open(file, *args, **kwargs):
+        if "manifest" in str(file):
+            return original_open(file, *args, **kwargs)
+        raise OSError("Read error")
+    monkeypatch.setattr(builtins, "open", mock_open)
+    assert verify_backup(str(dst), "sha256") is False
+
+
+def test_apply_retention(tmp_path: Path) -> None:
+    """Test retention policy clears old backup subdirectories by name date."""
+    # Retain for 5 days
+    cutoff_old = tmp_path / "2026-01-01_backup"
+    cutoff_old.mkdir()
+    
+    recent = tmp_path / "2026-07-08_backup"
+    recent.mkdir()
+
+    not_a_backup = tmp_path / "not-a-date"
+    not_a_backup.mkdir()
+
+    # Retention keep_days is calculated from datetime.utcnow().
+    # Let's mock cutoff to be older than 2026-01-01
+    apply_retention(str(tmp_path), keep_days=1, dry_run=False)
+
+    # 2026-01-01 is old, so it should be deleted.
+    # 2026-07-08 is recent, so it should keep it.
+    # non-dated should be skipped.
+    assert not cutoff_old.exists()
+    assert recent.exists()
+    assert not_a_backup.exists()
+
+
+def test_main_cli_execution(tmp_path: Path) -> None:
+    """Test main function CLI entry point scenarios."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "hello.txt").write_text("hello")
+
+    # 1. No arguments should raise argparse validation error and exit 2
+    with pytest.raises(SystemExit) as exc_info:
+        main([])
+    assert exc_info.value.code == 2
+
+    # 2. Nonexistent source exits 1
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--source", "nonexistent_source_dir_123", "--dest", str(dst)])
+    assert exc_info.value.code == 1
+
+    # 3. Successful run with verification
+    main(["--source", str(src), "--dest", str(dst), "--verify"])
+    assert (dst / "hello.txt").exists()
+    assert (dst / ".backup_manifest.json").exists()
+
+    # 4. Successful retention call
+    main(["--dest", str(tmp_path), "--apply-retention", "--keep-days", "10"])
