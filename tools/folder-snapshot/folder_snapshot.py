@@ -7,16 +7,17 @@ to show what was added, removed, or modified.
 """
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import logging
 import os
 import sys
-# pylint: disable=too-many-locals
-import fnmatch
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+# pylint: disable=too-many-locals
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class Snapshot:
     label: str
     files: Dict[str, FileEntry] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Serialize to a JSON-compatible dictionary."""
         return {
             "root": self.root,
@@ -78,15 +79,25 @@ class Snapshot:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Snapshot":
+    def from_dict(cls, data: Dict[str, Any]) -> "Snapshot":
         """Deserialize from a dictionary."""
         snap = cls(
-            root=data["root"],
-            timestamp=data["timestamp"],
-            algo=data.get("algo", DEFAULT_ALGO),
-            label=data.get("label", ""),
+            root=str(data["root"]),
+            timestamp=str(data["timestamp"]),
+            algo=str(data.get("algo", DEFAULT_ALGO)),
+            label=str(data.get("label", "")),
         )
-        snap.files = {k: FileEntry(**v) for k, v in data.get("files", {}).items()}
+        files_data = data.get("files", {})
+        if isinstance(files_data, dict):
+            snap.files = {
+                str(k): FileEntry(
+                    rel_path=str(v["rel_path"]),
+                    size_bytes=int(v["size_bytes"]),
+                    mtime=float(v["mtime"]),
+                    checksum=str(v["checksum"]),
+                )
+                for k, v in files_data.items()
+            }
         return snap
 
 
@@ -349,7 +360,7 @@ def _human(size_bytes: int) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if abs(size_bytes) < 1024.0:
             return f"{size_bytes:.1f} {unit}"
-        size_bytes //= 1024  # type: ignore[assignment]
+        size_bytes //= 1024
     return f"{size_bytes:.1f} TB"
 
 
