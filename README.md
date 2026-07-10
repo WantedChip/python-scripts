@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/wantedchip/python-scripts/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Python](https://img.shields.io/badge/Python-3.x-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14-blue.svg)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![Status: active](https://img.shields.io/badge/status-active-brightgreen.svg)
 
@@ -43,6 +43,19 @@ Each script is self-contained. To run one:
 cd category-name/script-name
 pip install -r requirements.txt   # only if present
 python script_name.py
+```
+
+## Development
+
+Every script is checked with `black`, `isort`, `flake8`, `pylint`, `mypy`,
+`bandit`, `vulture`, and `pytest`/`pytest-cov`, run automatically on every
+push across Linux, Windows, and macOS on Python 3.12–3.14. To run the same
+checks locally before pushing:
+
+```bash
+pip install -r requirements-dev.txt
+pre-commit install
+pre-commit run --all-files
 ```
 
 ## License
