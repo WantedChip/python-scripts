@@ -19,6 +19,7 @@ import time
 import urllib.parse
 from typing import Any, Dict, List, Optional
 
+# pylint: disable=import-error
 import jsonschema
 import requests
 import yaml  # type: ignore[import-untyped]
