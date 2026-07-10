@@ -12,6 +12,7 @@ import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+# pylint: disable=import-error
 import jsonschema
 import yaml  # type: ignore[import-untyped]
 from jsonschema.validators import validator_for
