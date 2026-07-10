@@ -10,6 +10,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Optional
 
+# pylint: disable=import-error
 import psutil
 
 
