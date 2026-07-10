@@ -2,12 +2,20 @@
 
 import argparse
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-from screenshot_organizer.main import ScreenshotOrganizer, parse_app_keywords
+# Ensure the src folder is in path for imports to resolve.
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# pylint: disable=wrong-import-position,import-error
+import pytest  # noqa: E402
+from screenshot_organizer.main import (  # noqa: E402
+    ScreenshotOrganizer,
+    parse_app_keywords,
+)
 
 
 def test_parse_app_keywords_none() -> None:
