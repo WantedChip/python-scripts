@@ -5,15 +5,31 @@ and duplicate similarity.
 """
 
 import argparse
+
+# Shim to fix Python 3.14 compatibility for pytesseract's use of
+# removed pkgutil.find_loader
+import importlib.util
 import json
 import logging
+import pkgutil
 import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-# pylint: disable=import-error
+if not hasattr(pkgutil, "find_loader"):
+
+    def _find_loader(name: str) -> Any:
+        try:
+            spec = importlib.util.find_spec(name)
+            return spec.loader if spec else None
+        except (ImportError, AttributeError, ValueError):
+            return None
+
+    pkgutil.find_loader = _find_loader  # type: ignore[assignment]
+
+# pylint: disable=import-error,wrong-import-position
 import pytesseract
 from PIL import ExifTags, Image
 
