@@ -361,7 +361,10 @@ def test_execute_file_action_move(
     organizer.execute_file_action(Path("src/img.png"), Path("dst/img.png"))
 
     mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
-    mock_move.assert_called_once_with("src\\img.png", "dst\\img.png")
+    mock_move.assert_called_once_with(
+        str(Path("src") / "img.png"),
+        str(Path("dst") / "img.png"),
+    )
     mock_copy.assert_not_called()
 
 
