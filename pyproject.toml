@@ -4,3 +4,11 @@ line_length = 88
 
 [tool.black]
 line-length = 88
+
+[tool.coverage.run]
+# Python 3.14+ defaults to a different measurement engine (sysmon, based on
+# sys.monitoring) than 3.12/3.13 (ctrace). Forcing ctrace everywhere keeps
+# coverage measurement identical across every Python version in the CI
+# matrix, so a coverage discrepancy always points to a real test/code issue
+# rather than "which engine happened to run."
+core = "ctrace"
