@@ -1,150 +1,106 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Folder, ArrowRight, ShieldCheck, Cpu, Code2 } from "lucide-react";
+import scriptsData from "@/data/scripts.json";
 
 export const metadata: Metadata = {
-  title: "Browse Scripts",
-  description: "Browse the full catalog of Python scripts — coming soon.",
+  title: "Browse Categories",
+  description: "Browse PyScripts collection of utilities segmented by functional category.",
 };
 
-/**
- * Browse page — Phase 0 placeholder.
- * Styled consistently with the rest of the site; no default 404 look.
- * Full browse/search functionality arrives in Phase 1.
- */
+interface ScriptItem {
+  category: string;
+}
+
+const CATEGORY_META: Record<string, { desc: string; icon: React.ReactNode; color: string }> = {
+  automation: {
+    desc: "Active monitors, automated file organization daemons, incremental backups, and webhook notifications.",
+    icon: <Cpu className="h-6 w-6" />,
+    color: "text-[var(--accent)] border-[var(--accent)]/20 bg-[var(--accent-subtle)]",
+  },
+  checkers: {
+    desc: "Read-only syntax validators, environment audits, cron timeline health checkers, and SSL/WHOIS expiration alerts.",
+    icon: <ShieldCheck className="h-6 w-6" />,
+    color: "text-[var(--success)] border-[var(--success)]/20 bg-green-950/20",
+  },
+  tools: {
+    desc: "CLI text utilities, Git repo cleanups, SQLite visual inspectors, subtitle correction engines, and screenshot OCR classification.",
+    icon: <Code2 className="h-6 w-6" />,
+    color: "text-[var(--warning)] border-[var(--warning)]/20 bg-amber-950/20",
+  },
+};
+
 export default function BrowsePage() {
+  const scripts = scriptsData as ScriptItem[];
+  const categories = Array.from(new Set(scripts.map((s) => s.category)));
+
+  // Calculate counts
+  const categoryCounts = categories.reduce((acc, cat) => {
+    acc[cat] = scripts.filter((s) => s.category === cat).length;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
-    <div
-      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
-      className="min-h-full flex items-center justify-center py-24 px-6"
-    >
-      <div className="text-center max-w-lg">
-        {/* Terminal animation */}
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "3rem",
-            marginBottom: "1.5rem",
-            lineHeight: 1,
-          }}
-          aria-hidden="true"
-        >
-          <span style={{ color: "var(--accent)" }}>$</span>
-          <span
-            style={{ color: "var(--text-muted)" }}
-          >
-            {" "}browse --all
-          </span>
-          <span
-            style={{
-              display: "inline-block",
-              width: "2px",
-              height: "2.5rem",
-              backgroundColor: "var(--accent)",
-              marginLeft: "4px",
-              verticalAlign: "middle",
-              animation: "blink 1.1s step-end infinite",
-            }}
-          />
+    <div className="bg-[var(--bg)] min-h-full py-16 px-6 sm:px-12 lg:px-24">
+      <div className="max-w-5xl mx-auto flex flex-col gap-12">
+        {/* Terminal Header */}
+        <div className="flex flex-col gap-3 border-b border-[var(--border)] pb-8">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--accent)]">
+            <span>$</span>
+            <span>pyscripts --list-categories</span>
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--text)]">Browse Categories</h1>
+          <p className="text-sm text-[var(--text-muted)] max-w-2xl leading-relaxed">
+            Explore our curated repository of 28 high-quality Python utilities. Each script is fully standalone, typed, tested, and contains zero external supply-chain dependencies unless explicitly documented.
+          </p>
         </div>
 
-        {/* Cursor blink animation */}
-        <style>{`
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-          }
-        `}</style>
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {categories.map((cat) => {
+            const meta = CATEGORY_META[cat] || {
+              desc: `All ${cat} tools and scripts.`,
+              icon: <Folder className="h-6 w-6" />,
+              color: "text-[var(--text-muted)] border-[var(--border)] bg-[var(--surface-raised)]",
+            };
+            const count = categoryCounts[cat] || 0;
 
-        <h1
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "1.75rem",
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            marginBottom: "1rem",
-          }}
-        >
-          Browse is coming in Phase 1
-        </h1>
+            return (
+              <Link
+                key={cat}
+                href={`/browse/${cat}`}
+                className="group flex flex-col justify-between p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] hover:border-[var(--text-dim)] transition-all cursor-pointer shadow-lg"
+              >
+                <div className="flex flex-col gap-4">
+                  {/* Category icon */}
+                  <div className={`h-12 w-12 rounded-lg border flex items-center justify-center ${meta.color}`}>
+                    {meta.icon}
+                  </div>
 
-        <p
-          style={{
-            color: "var(--text-muted)",
-            fontSize: "1rem",
-            lineHeight: 1.7,
-            marginBottom: "2rem",
-          }}
-        >
-          Full script browsing, search, category filtering, and one-click
-          downloads are being built right now. In the meantime, explore the
-          full index on GitHub.
-        </p>
+                  <div className="flex flex-col gap-1.5">
+                    {/* Category Title */}
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-bold text-[var(--text)] capitalize tracking-tight">
+                        {cat}
+                      </h2>
+                      <span className="font-mono text-[10px] text-[var(--text-dim)] bg-[var(--surface-raised)] border border-[var(--border)] px-2 py-0.5 rounded-full">
+                        {count} {count === 1 ? "script" : "scripts"}
+                      </span>
+                    </div>
+                    {/* Category Description */}
+                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                      {meta.desc}
+                    </p>
+                  </div>
+                </div>
 
-        {/* Status pill */}
-        <div
-          className="flex justify-center mb-6"
-        >
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.8125rem",
-              color: "var(--warning)",
-              border: "1px solid rgba(245,158,11,0.3)",
-              backgroundColor: "rgba(245,158,11,0.08)",
-              padding: "0.25rem 0.875rem",
-              borderRadius: "99px",
-              letterSpacing: "0.04em",
-            }}
-          >
-            ⧖ In development — Phase 1
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <a
-            href="https://github.com/WantedChip/python-scripts/blob/main/INDEX.md"
-            target="_blank"
-            rel="noopener noreferrer"
-            id="browse-index-link"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "#fff",
-              fontFamily: "var(--font-mono)",
-              fontWeight: 600,
-              fontSize: "0.9375rem",
-              padding: "0.6875rem 1.5rem",
-              borderRadius: "0.5rem",
-              transition: "background-color 0.15s ease",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.375rem",
-            }}
-            className="hover:bg-[var(--accent-dim)]"
-          >
-            View INDEX.md on GitHub
-          </a>
-
-          <Link
-            href="/"
-            id="browse-home-link"
-            style={{
-              backgroundColor: "var(--surface)",
-              color: "var(--text)",
-              border: "1px solid var(--border)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.9375rem",
-              padding: "0.6875rem 1.5rem",
-              borderRadius: "0.5rem",
-              transition: "background-color 0.15s ease",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.375rem",
-            }}
-            className="hover:bg-[var(--surface-hover)]"
-          >
-            ← Back home
-          </Link>
+                <div className="flex items-center gap-2 mt-6 font-mono text-[11px] text-[var(--text-dim)] group-hover:text-[var(--text)] transition-colors">
+                  <span>Explore category</span>
+                  <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

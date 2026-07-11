@@ -108,3 +108,133 @@ pre {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* ─── Markdown Content Styling ───────────────────────────────────────────── */
+.markdown-content {
+  color: var(--text-muted);
+  font-size: 0.925rem;
+  line-height: 1.625;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: var(--text);
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.85rem;
+  line-height: 1.25;
+}
+
+.markdown-content h1 {
+  font-size: 1.6rem;
+  border-b: 1px solid var(--border);
+  padding-bottom: 0.3rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.35rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.15rem;
+}
+
+.markdown-content p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-content ul {
+  list-style-type: disc;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+}
+
+.markdown-content li {
+  margin-top: 0.25rem;
+}
+
+.markdown-content pre {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  font-size: 0.825rem;
+}
+
+.markdown-content code {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.825rem;
+  color: var(--text);
+}
+
+.markdown-content pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-dim);
+  margin: 0 0 1rem 0;
+  font-style: italic;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.825rem;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--border);
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: var(--surface-raised);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.markdown-content tr:nth-child(even) {
+  background-color: var(--surface-raised)/20;
+}
+

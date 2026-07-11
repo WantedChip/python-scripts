@@ -66,6 +66,37 @@ export default function Header() {
             browse
           </Link>
 
+          <Link
+            href="/search"
+            style={{
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.875rem",
+              padding: "0.375rem 0.75rem",
+              borderRadius: "0.375rem",
+              transition: "color 0.15s ease, background-color 0.15s ease",
+            }}
+            className="hover:text-white hover:bg-white/5"
+          >
+            search
+          </Link>
+
+          <Link
+            href="/guide"
+            style={{
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.875rem",
+              padding: "0.375rem 0.75rem",
+              borderRadius: "0.375rem",
+              transition: "color 0.15s ease, background-color 0.15s ease",
+              marginRight: "0.5rem",
+            }}
+            className="hover:text-white hover:bg-white/5"
+          >
+            guide
+          </Link>
+
           <a
             href="https://github.com/WantedChip/python-scripts"
             target="_blank"
