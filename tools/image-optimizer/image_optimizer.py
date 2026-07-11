@@ -350,7 +350,7 @@ def main() -> None:
     parser.add_argument(
         "--scale",
         type=float,
-        help="Scale factor (e.g. 0.5 for 50%). Width/height ignored if set.",
+        help="Scale factor (e.g. 0.5 for 50%%). Width/height ignored if set.",
     )
 
     # Format / Compression Options
