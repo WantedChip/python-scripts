@@ -75,3 +75,5 @@ Run the unit test suite to verify code correctness and coverage:
 ```bash
 $env:PYTHONPATH="src"; pytest tests/ --cov=src/ --cov-report=term-missing
 ```
+
+Quality: pylint 10.00/10 · 84% coverage · 2 dependencies

@@ -59,3 +59,5 @@ python git_cleanup.py -v
 ```bash
 pytest
 ```
+
+Quality: pylint 10.00/10 · 83% coverage · 0 dependencies
