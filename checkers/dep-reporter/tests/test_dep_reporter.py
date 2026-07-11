@@ -9,10 +9,10 @@ from urllib.error import HTTPError
 
 import pytest
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# pylint: disable=import-error, wrong-import-position, unused-argument, import-outside-toplevel
+# pylint: disable=import-error, wrong-import-position
+# pylint: disable=unused-argument, import-outside-toplevel
 import dep_reporter  # noqa: E402
 
 

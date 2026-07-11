@@ -15,7 +15,6 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-
 # Python 3.11+ standard library tomllib for pyproject.toml
 if sys.version_info >= (3, 11):
     import tomllib
@@ -23,6 +22,8 @@ else:
     # Fallback dictionary parser for pyproject.toml in older python versions
     tomllib = None  # type: ignore # pylint: disable=invalid-name
 
+
+# pylint: disable=duplicate-code
 
 logger = logging.getLogger("dep_reporter")
 

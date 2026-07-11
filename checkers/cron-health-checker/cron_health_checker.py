@@ -9,12 +9,12 @@ import datetime
 import json
 import logging
 import re
-
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+# pylint: disable=duplicate-code
 
 logger = logging.getLogger("cron_health_checker")
 

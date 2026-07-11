@@ -11,7 +11,10 @@ import sys
 from pathlib import Path
 from typing import Tuple
 
+# pylint: disable=duplicate-code
+
 logger = logging.getLogger("project_bootstrapper")
+
 
 # String templates for generated files
 

@@ -17,6 +17,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Generator, List, Optional
 
+# pylint: disable=duplicate-code
+
 logger = logging.getLogger("data_export_searcher")
 
 

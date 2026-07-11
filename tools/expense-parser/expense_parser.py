@@ -15,7 +15,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# pylint: disable=duplicate-code
+
 logger = logging.getLogger("expense_parser")
+
 
 DEFAULT_RULES = {
     "Food & Dining": [
@@ -297,7 +300,6 @@ def generate_summaries(transactions: List[Dict[str, Any]]) -> Dict[str, Any]:
             "categories": collections.defaultdict(float),
         }
     )
-
 
     for t in transactions:
         dt = datetime.datetime.strptime(t["date"], "%Y-%m-%d")

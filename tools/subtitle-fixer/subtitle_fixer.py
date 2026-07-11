@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+# pylint: disable=duplicate-code
+
 logger = logging.getLogger("subtitle_fixer")
 
 

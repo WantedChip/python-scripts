@@ -9,13 +9,14 @@ import collections
 import json
 import logging
 import os
-
 import sys
 from pathlib import Path
 from typing import Generator, List, Tuple
 
+# pylint: disable=duplicate-code
 
 logger = logging.getLogger("history_analyzer")
+
 
 # Predefined common short-name mappings for suggestion generator
 COMMON_ALIASES = {

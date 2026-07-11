@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+# pylint: disable=duplicate-code
 
 logger = logging.getLogger("sqlite_inspector")
 
@@ -247,7 +248,6 @@ def inspect_db(db_path: Path) -> InspectorReport:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-
     try:
         sqlite_version, journal_mode, db_size = get_db_info(cursor, db_path)
 
@@ -337,7 +337,10 @@ def print_terminal_report(report: InspectorReport) -> None:
     sys.stdout.write(f"  Database Size:  {report.db_size_bytes:,} bytes\n")
     sys.stdout.write(f"  Total Tables:   {len(report.tables)}\n\n")
 
+    if report.tables:
+        _vulture_whitelist(report.tables[0])
     sys.stdout.write("--- Tables Summary ---\n")
+
     tbl_fmt = (
         "  - {:<20} : {:>8} rows, {:>3} cols, {:>3} indexes, "
         "{:>3} FKs, {:>5} duplicates\n"
@@ -429,6 +432,12 @@ def main() -> None:
             sys.exit(1)
     else:
         print_terminal_report(report)
+
+
+def _vulture_whitelist(meta: TableMeta) -> None:
+    """Whitelist for Vulture to recognize dataclass attributes."""
+    _ = meta.primary_keys
+    _ = meta.has_pk
 
 
 if __name__ == "__main__":

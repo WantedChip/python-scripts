@@ -9,11 +9,12 @@ import fnmatch
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 from PIL import Image
 
-# pylint: disable=import-error
+# pylint: disable=import-error, duplicate-code
+
 
 logger = logging.getLogger("image_optimizer")
 
@@ -51,14 +52,16 @@ def get_exif_bytes(img: Image.Image, rule: str) -> Optional[bytes]:
 
     try:
         if rule == "keep":
-            return img.info.get("exif")
+            return cast(Optional[bytes], img.info.get("exif"))
 
         if rule == "orientation":
             exif = img.getexif()
             if exif and 274 in exif:
                 new_exif = Image.Exif()
                 new_exif[274] = exif[274]
-                return new_exif.tobytes()
+                val_bytes = new_exif.tobytes()
+                if isinstance(val_bytes, bytes):
+                    return val_bytes
     except Exception as err:  # pylint: disable=broad-exception-caught
         logger.warning("Failed to parse EXIF metadata: %s", err)
 

@@ -4,8 +4,7 @@ Monitors specific HTML elements on target webpages for changes.
 Fires local notifications and webhook posts on detection of content changes.
 """
 
-# pylint: disable=duplicate-code
-# Standalone script design prioritized over sharing duplicate boilerplate/helpers.
+# pylint: disable=duplicate-code, import-error
 
 
 import argparse

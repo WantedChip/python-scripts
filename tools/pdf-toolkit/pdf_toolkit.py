@@ -13,6 +13,8 @@ from typing import List, Set
 
 from pypdf import PdfReader, PdfWriter
 
+# pylint: disable=import-error, duplicate-code
+
 # Setup logger
 logger = logging.getLogger("pdf_toolkit")
 
