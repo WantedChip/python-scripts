@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Terminal, Search, HelpCircle, Home, FolderOpen, ArrowRight, Check, Download } from "lucide-react";
+import { Terminal, Search, HelpCircle, Home, FolderOpen, ArrowRight, Check, Download, Layers } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { searchScripts } from "@/lib/search";
 import { Script, FileNode } from "@/lib/search/types";
+import { calculateTier } from "@/lib/tier";
 
 function findFilePathInTree(nodes: FileNode[], query: string): string | null {
   const q = query.toLowerCase();
@@ -203,6 +204,26 @@ export default function CommandPalette() {
       return items;
     }
 
+    if (normalizedQuery.startsWith("rank ")) {
+      const subQuery = normalizedQuery.slice(5).trim();
+      const matched = searchScripts(subQuery, scripts, "Broad");
+      matched.forEach(({ script }) => {
+        const tier = calculateTier(script.coveragePct, script.depCount, script.unranked);
+        const tierLabel = tier === "Unranked" ? "Unranked" : `${tier}-Tier`;
+        items.push({
+          id: `rank-${script.name}`,
+          title: `rank ${script.name} — ${tierLabel}`,
+          subtitle: `Inspect detailed quality score details for ${script.name}`,
+          icon: <Layers className="h-4 w-4 text-[var(--accent)]" />,
+          action: () => {
+            router.push(`/scripts/${script.category}/${script.name}`);
+            setIsOpen(false);
+          },
+        });
+      });
+      return items;
+    }
+
     if (normalizedQuery.startsWith("cd ") || normalizedQuery.startsWith("browse ")) {
       const subQuery = normalizedQuery.startsWith("cd ")
         ? normalizedQuery.slice(3).trim()
@@ -301,10 +322,13 @@ export default function CommandPalette() {
     }
 
     finalMatched.forEach(({ script }) => {
+      const tier = calculateTier(script.coveragePct, script.depCount, script.unranked);
+      const tierLabel = tier === "Unranked" ? "Unranked" : tier;
+
       // 1. Navigation Option
       items.push({
         id: `open-${script.name}`,
-        title: `open ${script.name}`,
+        title: `open ${script.name} — ${tierLabel}`,
         subtitle: script.description,
         icon: <ArrowRight className="h-4 w-4" />,
         action: () => {

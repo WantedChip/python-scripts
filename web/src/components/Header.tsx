@@ -82,6 +82,21 @@ export default function Header() {
           </Link>
 
           <Link
+            href="/tier-list"
+            style={{
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.875rem",
+              padding: "0.375rem 0.75rem",
+              borderRadius: "0.375rem",
+              transition: "color 0.15s ease, background-color 0.15s ease",
+            }}
+            className="hover:text-white hover:bg-white/5"
+          >
+            leaderboard
+          </Link>
+
+          <Link
             href="/guide"
             style={{
               color: "var(--text-muted)",

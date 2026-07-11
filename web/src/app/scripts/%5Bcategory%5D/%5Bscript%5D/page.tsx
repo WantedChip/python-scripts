@@ -6,6 +6,7 @@ import scriptsData from "@/data/scripts.json";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import DownloadButtons from "@/components/DownloadButtons";
 import FileExplorer from "@/components/FileExplorer";
+import TierBadge from "@/components/TierBadge";
 import { Script } from "@/lib/search/types";
 
 interface Props {
@@ -76,6 +77,30 @@ export default async function ScriptDetailPage({ params, searchParams }: Props) 
           </Link>
           <span className="text-[var(--border)]">/</span>
           <span className="font-mono text-xs text-[var(--text)]">{script.name}</span>
+        </div>
+
+        {/* Script Header Info */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-mono font-bold tracking-tight text-[var(--text)] flex items-center gap-2">
+              <Terminal className="h-6 w-6 text-[var(--accent)]" />
+              <span>{script.name}</span>
+            </h1>
+            <p className="text-sm text-[var(--text-muted)] max-w-2xl">
+              {script.description}
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0">
+            <TierBadge
+              unranked={script.unranked}
+              coveragePct={script.coveragePct}
+              depCount={script.depCount}
+              size="md"
+            />
+            <span className="text-xs font-mono border border-[var(--border)] bg-[var(--surface-raised)] px-3 py-1 rounded-full text-[var(--text-muted)] uppercase">
+              {script.category}
+            </span>
+          </div>
         </div>
 
         {/* Content Split Layout */}

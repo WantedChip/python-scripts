@@ -11,6 +11,7 @@ import { matchWholeWord } from "@/lib/search/modes/wholeWord";
 import { matchSubstring } from "@/lib/search/modes/substring";
 import { matchFuzzy } from "@/lib/search/modes/fuzzy";
 import { MatchSpan, SearchMode, Script } from "@/lib/search/types";
+import TierBadge from "@/components/TierBadge";
 
 // Mode description and example data to run through the engines
 const MODE_DETAILS: Record<
@@ -266,6 +267,12 @@ export default function SearchPage() {
                       >
                         {renderHighlightedText(script.name, nameMatches)}
                       </Link>
+
+                       <TierBadge
+                        unranked={script.unranked}
+                        coveragePct={script.coveragePct}
+                        depCount={script.depCount}
+                      />
 
                       <span className="text-[10px] capitalize font-mono border border-[var(--border)] bg-[var(--surface-raised)] px-2 py-0.5 rounded-full text-[var(--text-dim)]">
                         {script.category}

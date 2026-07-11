@@ -242,6 +242,32 @@ function main() {
     // build file tree recursively
     const fileTree = buildFileTree(scriptAbsPath, scriptAbsPath);
 
+    // Parse quality metrics from README.md
+    let pylintScore = null;
+    let coveragePct = null;
+    let depCount = null;
+    let unranked = true;
+
+    if (readme) {
+      const qualityRegex = /Quality:\s*pylint\s*([\d.]+)\/10\s*·\s*(\d+)%\s*coverage\s*·\s*(\d+)\s*dependencies/i;
+      const match = readme.match(qualityRegex);
+      if (match) {
+        pylintScore = parseFloat(match[1]);
+        coveragePct = parseInt(match[2], 10);
+        depCount = parseInt(match[3], 10);
+        unranked = false;
+      } else {
+        const looseRegex = /Quality:\s*pylint\s*([\d.]+)\/10\s*·\s*(\d+)%\s*coverage/i;
+        const looseMatch = readme.match(looseRegex);
+        if (looseMatch) {
+          pylintScore = parseFloat(looseMatch[1]);
+          coveragePct = parseInt(looseMatch[2], 10);
+          depCount = requirements.length;
+          unranked = false;
+        }
+      }
+    }
+
     results.push({
       name: entry.name,
       category: entry.category,
@@ -252,6 +278,10 @@ function main() {
       hasTests,
       mainFile,
       fileTree,
+      pylintScore,
+      coveragePct,
+      depCount,
+      unranked,
     });
   }
 

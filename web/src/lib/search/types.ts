@@ -16,6 +16,10 @@ export interface Script {
   hasTests: boolean;
   mainFile: string;
   fileTree: FileNode[];
+  pylintScore: number | null;
+  coveragePct: number | null;
+  depCount: number | null;
+  unranked: boolean;
 }
 
 export interface MatchSpan {

@@ -3,23 +3,14 @@ import type { Metadata } from "next";
 import { existsSync } from "fs";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { Script } from "@/lib/search/types";
+import StatsStrip from "@/components/StatsStrip";
 
 export const metadata: Metadata = {
   title: "PyScripts — Python CLI Scripts Library",
   description:
     "A curated library of high-quality, fully-tested Python CLI scripts for automation, system tools, data processing, and more.",
 };
-
-interface Script {
-  name: string;
-  category: string;
-  path: string;
-  description: string;
-  readme: string;
-  requirements: string[];
-  hasTests: boolean;
-  mainFile: string | null;
-}
 
 /** Load scripts.json from the data directory. Returns [] if not found. */
 function loadScripts(): Script[] {
@@ -203,12 +194,7 @@ export default function HomePage() {
                 paddingTop: "2rem",
               }}
             >
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                <StatCard value={totalScripts} label="scripts" />
-                <StatCard value={totalCategories} label="categories" />
-                <StatCard value={scriptsWithTests} label="with tests" />
-                <StatCard value={zeroDepScripts} label="zero-dep" />
-              </div>
+              <StatsStrip />
             </div>
           )}
         </div>

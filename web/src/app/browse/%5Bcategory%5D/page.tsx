@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Play, ShieldAlert, Cpu, ShieldCheck, Code2 } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { Script } from "@/lib/search/types";
+import TierBadge from "@/components/TierBadge";
+import StatsStrip from "@/components/StatsStrip";
 
 interface Props {
   params: Promise<{ category: string }>;
@@ -81,6 +83,8 @@ export default async function CategoryPage({ params }: Props) {
           </p>
         </div>
 
+        <StatsStrip />
+
         {/* Grid List */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filtered.map((script) => (
@@ -97,6 +101,11 @@ export default async function CategoryPage({ params }: Props) {
                     </Link>
                   </h3>
                   <div className="flex items-center gap-2">
+                    <TierBadge
+                      unranked={script.unranked}
+                      coveragePct={script.coveragePct}
+                      depCount={script.depCount}
+                    />
                     {script.hasTests && (
                       <span
                         title="Passes unit test suites"
