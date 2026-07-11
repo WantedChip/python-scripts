@@ -23,6 +23,7 @@ python-scripts/
 ├── converters/
 ├── api-wrappers/
 ├── misc/
+├── web/              # browsable/searchable frontend for this repo (in development)
 └── ...
 ```
 
@@ -44,6 +45,14 @@ cd category-name/script-name
 pip install -r requirements.txt   # only if present
 python script_name.py
 ```
+
+## Website
+
+A browsable, searchable web frontend for this repo — browse by category,
+search, preview code, and download scripts — is under active development
+in [`/web`](web/). It's not deployed yet; once it's live, the link will go
+here. In the meantime, see `web/README.md` for how to run it locally once
+that phase is far enough along.
 
 ## Development
 
