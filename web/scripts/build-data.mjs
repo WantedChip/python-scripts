@@ -14,9 +14,9 @@
  *  - scripts.json holds metadata + README text only; no source code embedded.
  */
 
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { writeFileSync, mkdirSync } from "fs";
-import { join, resolve, dirname } from "path";
+import { join, resolve, dirname, relative } from "path";
 import { fileURLToPath } from "url";
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
@@ -152,6 +152,56 @@ function parseRequirements(content) {
     .filter(Boolean);
 }
 
+/**
+ * Recursively scan folder contents to compile hierarchical file trees without source contents
+ */
+function buildFileTree(dirAbsPath, baseAbsPath) {
+  const nodes = [];
+  const ignoredDirs = new Set(["__pycache__", ".pytest_cache", ".git", ".venv", "dist", "build", "node_modules"]);
+  const ignoredFiles = new Set([".DS_Store", "Thumbs.db", ".env"]);
+
+  try {
+    const entries = readdirSync(dirAbsPath, { withFileTypes: true });
+
+    // Sort entries to show directories first, then files alphabetically
+    entries.sort((a, b) => {
+      if (a.isDirectory() && !b.isDirectory()) return -1;
+      if (!a.isDirectory() && b.isDirectory()) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (ignoredDirs.has(entry.name)) continue;
+        const subAbs = join(dirAbsPath, entry.name);
+        const children = buildFileTree(subAbs, baseAbsPath);
+        const relPath = relative(baseAbsPath, subAbs).replace(/\\/g, "/");
+        nodes.push({
+          name: entry.name,
+          path: relPath,
+          type: "dir",
+          children,
+        });
+      } else if (entry.isFile()) {
+        if (ignoredFiles.has(entry.name) || entry.name.endsWith(".pyc")) continue;
+        const fileAbs = join(dirAbsPath, entry.name);
+        const stats = statSync(fileAbs);
+        const relPath = relative(baseAbsPath, fileAbs).replace(/\\/g, "/");
+        nodes.push({
+          name: entry.name,
+          path: relPath,
+          type: "file",
+          size: stats.size,
+        });
+      }
+    }
+  } catch (error) {
+    console.warn(`[build-data] Error building file tree for ${dirAbsPath}:`, error.message);
+  }
+
+  return nodes;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -189,6 +239,9 @@ function main() {
     // main .py file
     const mainFile = findMainPyFile(scriptAbsPath, entry.name);
 
+    // build file tree recursively
+    const fileTree = buildFileTree(scriptAbsPath, scriptAbsPath);
+
     results.push({
       name: entry.name,
       category: entry.category,
@@ -198,6 +251,7 @@ function main() {
       requirements,
       hasTests,
       mainFile,
+      fileTree,
     });
   }
 

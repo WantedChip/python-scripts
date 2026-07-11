@@ -5,10 +5,12 @@ import { ArrowLeft, Github, Terminal, CheckCircle2, AlertCircle } from "lucide-r
 import scriptsData from "@/data/scripts.json";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import DownloadButtons from "@/components/DownloadButtons";
+import FileExplorer from "@/components/FileExplorer";
 import { Script } from "@/lib/search/types";
 
 interface Props {
   params: Promise<{ category: string; script: string }>;
+  searchParams: Promise<{ file?: string }>;
 }
 
 export async function generateStaticParams() {
@@ -27,8 +29,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ScriptDetailPage({ params }: Props) {
+export default async function ScriptDetailPage({ params, searchParams }: Props) {
   const { category, script: scriptName } = await params;
+  const { file } = await searchParams;
   const scripts = scriptsData as Script[];
 
   if (!category || !scriptName) {
@@ -77,17 +80,14 @@ export default async function ScriptDetailPage({ params }: Props) {
 
         {/* Content Split Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content: README.md renderer */}
-          <div className="lg:col-span-2 flex flex-col gap-6 p-6 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg overflow-hidden">
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--text)] font-mono border-b border-[var(--border)] pb-4 flex items-center gap-2">
-              <Terminal className="h-5 w-5 text-[var(--accent)]" />
-              <span>{script.name}</span>
-            </h1>
-            
-            {/* README Content */}
-            <div className="overflow-x-auto">
-              <MarkdownRenderer content={script.readme} />
-            </div>
+          {/* Main content: File Explorer component */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <FileExplorer
+              fileTree={script.fileTree}
+              scriptPath={script.path}
+              scriptName={script.name}
+              initialFilePath={file}
+            />
           </div>
 
           {/* Sidebar: Download & Requirements Cards */}

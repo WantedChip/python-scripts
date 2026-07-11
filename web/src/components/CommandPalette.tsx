@@ -5,7 +5,40 @@ import { useRouter } from "next/navigation";
 import { Terminal, Search, HelpCircle, Home, FolderOpen, ArrowRight, Check, Download } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { searchScripts } from "@/lib/search";
-import { Script } from "@/lib/search/types";
+import { Script, FileNode } from "@/lib/search/types";
+
+function findFilePathInTree(nodes: FileNode[], query: string): string | null {
+  const q = query.toLowerCase();
+  
+  // 1. Exact, filename-only, or exact suffix matches
+  for (const node of nodes) {
+    if (node.type === "file") {
+      const pathLower = node.path.toLowerCase();
+      if (pathLower === q || pathLower.endsWith("/" + q) || node.name.toLowerCase() === q) {
+        return node.path;
+      }
+    }
+    if (node.type === "dir" && node.children) {
+      const found = findFilePathInTree(node.children, query);
+      if (found) return found;
+    }
+  }
+  
+  // 2. Substring fallback match
+  for (const node of nodes) {
+    if (node.type === "file") {
+      if (node.path.toLowerCase().includes(q)) {
+        return node.path;
+      }
+    }
+    if (node.type === "dir" && node.children) {
+      const found = findFilePathInTree(node.children, query);
+      if (found) return found;
+    }
+  }
+  
+  return null;
+}
 
 interface CommandItem {
   id: string;
@@ -129,19 +162,44 @@ export default function CommandPalette() {
     // Match explicit command formats first
     if (normalizedQuery.startsWith("open ")) {
       const subQuery = normalizedQuery.slice(5).trim();
-      const matched = searchScripts(subQuery, scripts, "Broad");
-      matched.forEach(({ script }) => {
-        items.push({
-          id: `open-${script.name}`,
-          title: `open ${script.name}`,
-          subtitle: `Go to ${script.name} detail page`,
-          icon: <ArrowRight className="h-4 w-4" />,
-          action: () => {
-            router.push(`/scripts/${script.category}/${script.name}`);
-            setIsOpen(false);
-          },
+      const slashIdx = subQuery.indexOf("/");
+
+      if (slashIdx !== -1) {
+        // format: open <script>/<file>
+        const scriptQuery = subQuery.slice(0, slashIdx).trim();
+        const fileQuery = subQuery.slice(slashIdx + 1).trim();
+
+        const matched = searchScripts(scriptQuery, scripts, "Broad");
+        matched.forEach(({ script }) => {
+          const resolvedPath = findFilePathInTree(script.fileTree || [], fileQuery) || fileQuery;
+
+          items.push({
+            id: `open-${script.name}-${resolvedPath}`,
+            title: `open ${script.name}/${resolvedPath}`,
+            subtitle: `Open ${resolvedPath} in ${script.name} explorer`,
+            icon: <ArrowRight className="h-4 w-4" />,
+            action: () => {
+              router.push(`/scripts/${script.category}/${script.name}?file=${encodeURIComponent(resolvedPath)}`);
+              setIsOpen(false);
+            },
+          });
         });
-      });
+      } else {
+        // format: open <script>
+        const matched = searchScripts(subQuery, scripts, "Broad");
+        matched.forEach(({ script }) => {
+          items.push({
+            id: `open-${script.name}`,
+            title: `open ${script.name}`,
+            subtitle: `Open ${script.name} code explorer`,
+            icon: <ArrowRight className="h-4 w-4" />,
+            action: () => {
+              router.push(`/scripts/${script.category}/${script.name}`);
+              setIsOpen(false);
+            },
+          });
+        });
+      }
       return items;
     }
 

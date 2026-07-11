@@ -1,3 +1,11 @@
+export interface FileNode {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  size?: number;
+  children?: FileNode[];
+}
+
 export interface Script {
   name: string;
   category: string;
@@ -7,6 +15,7 @@ export interface Script {
   requirements: string[];
   hasTests: boolean;
   mainFile: string;
+  fileTree: FileNode[];
 }
 
 export interface MatchSpan {
