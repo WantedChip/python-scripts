@@ -1,9 +1,16 @@
 [tool.isort]
 profile = "black"
 line_length = 88
+skip_glob = ["web/node_modules/*", "web/.next/*"]
 
 [tool.black]
 line-length = 88
+extend-exclude = '''
+(
+  web/node_modules
+  | web/\.next
+)
+'''
 
 [tool.coverage.run]
 # Python 3.14+ defaults to a different measurement engine (sysmon, based on
