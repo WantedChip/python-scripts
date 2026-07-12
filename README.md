@@ -16,15 +16,10 @@ See [INDEX.md](INDEX.md) for the full list of scripts.
 
 ```
 python-scripts/
-├── scraping/
 ├── automation/
 ├── checkers/
 ├── tools/
-├── converters/
-├── api-wrappers/
-├── misc/
-├── web/              # browsable/searchable frontend for this repo (in development)
-└── ...
+└── web/              # browsable/searchable catalog website for this repo
 ```
 
 Each script folder looks like:
@@ -43,16 +38,13 @@ Each script is self-contained. To run one:
 ```bash
 cd category-name/script-name
 pip install -r requirements.txt   # only if present
-python script_name.py
+python script_name.py --help      # show available options and parameters
+python script_name.py             # run the script
 ```
 
 ## Website
 
-A browsable, searchable web frontend for this repo — browse by category,
-search, preview code, and download scripts — is under active development
-in [`/web`](web/). It's not deployed yet; once it's live, the link will go
-here. In the meantime, see `web/README.md` for how to run it locally once
-that phase is far enough along.
+A browsable, searchable web catalog for this repo is available in [web/](web/). It allows you to browse by category, search scripts using multiple matching modes, preview code with full syntax highlighting, and download scripts directly. See [web/README.md](web/README.md) for instructions on how to run the site locally.
 
 ## Development
 
