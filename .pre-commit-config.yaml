@@ -36,7 +36,7 @@ repos:
     hooks:
       - id: vulture
         pass_filenames: false
-        args: [".", "--exclude=**/tests/**,**/.venv/**,**/.git/**"]
+        args: [".", "--exclude=**/tests/**,**/.venv/**,**/.git/**,**/node_modules/**,**/.next/**"]
 
   # pylint needs the project's own runtime deps importable to resolve
   # third-party imports correctly, so it stays a local/system hook rather
