@@ -57,7 +57,7 @@ jobs:
         continue-on-error: true
         run: |
           echo "::add-matcher::.github/problem-matchers/flake8.json"
-          flake8 --max-line-length=88 .
+          flake8 --max-line-length=88 --exclude=web/node_modules,web/.next .
           echo "::remove-matcher owner=flake8::"
 
       - name: Pylint check
@@ -65,7 +65,8 @@ jobs:
         continue-on-error: true
         run: |
           echo "::add-matcher::.github/problem-matchers/pylint.json"
-          find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' -exec pylint {} +
+          find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' -exec pylint {} +
           echo "::remove-matcher owner=pylint::"
 
       - name: Mypy check
@@ -74,18 +75,21 @@ jobs:
         run: |
           echo "::add-matcher::.github/problem-matchers/mypy.json"
           find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' \
             -exec mypy --config-file=mypy.ini {} +
           echo "::remove-matcher owner=mypy::"
 
       - name: Bandit check
         id: bandit
         continue-on-error: true
-        run: bandit -r . -x '**/tests/**,**/.*'
+        run: bandit -r . -x '**/tests/**,**/.*,**/node_modules/**,**/.next/**'
 
       - name: Vulture check
         id: vulture
         continue-on-error: true
-        run: find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' -exec vulture {} +
+        run: |
+          find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' -exec vulture {} +
 
       - name: Pip-audit check
         id: pip_audit
