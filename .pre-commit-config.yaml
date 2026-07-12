@@ -17,12 +17,13 @@ repos:
       - id: flake8
         args: [--max-line-length=88]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+  - repo: local
     hooks:
       - id: mypy
-        args: [--config-file=mypy.ini]
-        additional_dependencies: [types-requests==2.32.0.20240622]
+        name: mypy (grouped per directory)
+        entry: python scripts/run_mypy_grouped.py
+        language: system
+        types: [python]
         exclude: (^|/)tests/
 
   - repo: https://github.com/PyCQA/bandit

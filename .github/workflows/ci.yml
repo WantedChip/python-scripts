@@ -73,11 +73,34 @@ jobs:
         id: mypy
         continue-on-error: true
         run: |
+          # One mypy invocation per script directory, not one big batch across
+          # the whole repo. Two different script folders can (and will, at
+          # this repo's scale) share a filename like vulture_whitelist.py or
+          # main.py with no package structure to disambiguate them — batching
+          # them into a single mypy call makes it try to assign both the same
+          # module name and fail with "Duplicate module named X". Looping per
+          # directory makes that collision structurally impossible: files in
+          # the same folder are safe to check together, different folders
+          # never share an invocation.
           echo "::add-matcher::.github/problem-matchers/mypy.json"
-          find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
+          failures=0
+          dirs=$(find . -name "*.py" -not -path '*/tests/*' -not -path '*/.*' \
             -not -path '*/node_modules/*' -not -path '*/.next/*' \
-            -exec mypy --config-file=mypy.ini {} +
+            -exec dirname {} \; | sort -u)
+          for dir in $dirs; do
+            echo "::group::mypy: $dir"
+            mypy --config-file=mypy.ini "$dir"/*.py
+            status=$?
+            echo "::endgroup::"
+            if [ $status -ne 0 ]; then
+              failures=$((failures + 1))
+            fi
+          done
           echo "::remove-matcher owner=mypy::"
+          if [ "$failures" -gt 0 ]; then
+            echo "$failures director(y/ies) failed mypy."
+            exit 1
+          fi
 
       - name: Bandit check
         id: bandit
