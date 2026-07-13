@@ -1,0 +1,1 @@
+"""CLI Workflow Recorder package."""
