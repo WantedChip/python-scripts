@@ -54,6 +54,7 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+scratch/
 
 # web — generated data (never hand-edit; regenerated on every build)
 web/src/data/scripts.json
