@@ -24,6 +24,7 @@ Full index of every script in this repo, organized by category.
 
 | Script | Description |
 |---|---|
+| [ai-code-sanitizer](checkers/ai-code-sanitizer/) | Scan code likely generated or heavily modified by AI and flag fake imports, nonexistent package APIs, duplicate helpers, placeholder comments, swallowed exceptions, unnecessary abstractions, and tests that don't really test anything. |
 | [api-monitor](checkers/api-monitor/) | Periodically tests HTTP endpoints for status codes, latency thresholds, JSON schemas, and SSL expiry. |
 | [config-validator](checkers/config-validator/) | Validates JSON/YAML configurations against schemas and generates compiler-like human-readable error messages. |
 | [cron-health-checker](checkers/cron-health-checker/) | Detect failed, missing, overlapping, or silently broken scheduled jobs. |
@@ -36,6 +37,7 @@ Full index of every script in this repo, organized by category.
 | [repository-documentation-auditor](checkers/repository-documentation-auditor/) | Detect missing setup instructions, dead commands, undocumented environment variables, and stale README references. |
 | [secret-leak-scanner](checkers/secret-leak-scanner/) | Detect sensitive API keys, credentials, database connection strings, and private SSH keys in local files or git staged commits, providing remediation steps. |
 | [sqlite-inspector](checkers/sqlite-inspector/) | Audit SQLite databases, summarizing tables, null patterns, duplicate rows, and schema issues. |
+| [works-on-my-machine](checkers/works-on-my-machine/) | Inspect a Python project and generate a reproducibility report covering Python version, OS assumptions, environment variables, external binaries, ports, package versions, and undeclared system dependencies. |
 
 ---
 
