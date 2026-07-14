@@ -258,7 +258,9 @@ def check_permissions() -> Dict[str, Any]:
     is_admin = False
     try:
         if platform.system() == "Windows":
-            is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+            windll = getattr(ctypes, "windll", None)
+            if windll is not None:
+                is_admin = windll.shell32.IsUserAnAdmin() != 0
         else:
             getuid = getattr(os, "getuid", None)
             is_admin = getuid is not None and getuid() == 0

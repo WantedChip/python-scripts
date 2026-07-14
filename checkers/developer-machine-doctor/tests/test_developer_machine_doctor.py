@@ -26,7 +26,9 @@ from developer_machine_doctor.main import (  # noqa: E402
 @pytest.fixture
 def mock_env():
     """Fixture to mock environment variables."""
-    with patch.dict("os.environ", {"PATH": "/usr/bin;/invalid/path;/usr/bin"}):
+    path_sep = ";" if sys.platform == "win32" else ":"
+    mock_path = path_sep.join(["/usr/bin", "/invalid/path", "/usr/bin"])
+    with patch.dict("os.environ", {"PATH": mock_path}):
         yield
 
 
