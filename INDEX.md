@@ -32,7 +32,9 @@ Full index of every script in this repo, organized by category.
 | [env-auditor](checkers/env-auditor/) | Compares `.env`, `.env.example`, Docker files, and source code to find missing or unused variables. |
 | [expiry-monitor](checkers/expiry-monitor/) | Evaluates domain WHOIS registration and SSL certificate validity days remaining. |
 | [link-checker](checkers/link-checker/) | Crawls a website or scans local Markdown/HTML files and reports dead links, redirects, and timeouts. |
+| [repo-doctor](checkers/repo-doctor/) | Run one command inside any repository and detect missing README sections, broken setup commands, stale dependencies, missing .gitignore entries, giant files, accidental binaries, dead links, and suspicious secrets. |
 | [repository-documentation-auditor](checkers/repository-documentation-auditor/) | Detect missing setup instructions, dead commands, undocumented environment variables, and stale README references. |
+| [secret-leak-scanner](checkers/secret-leak-scanner/) | Detect sensitive API keys, credentials, database connection strings, and private SSH keys in local files or git staged commits, providing remediation steps. |
 | [sqlite-inspector](checkers/sqlite-inspector/) | Audit SQLite databases, summarizing tables, null patterns, duplicate rows, and schema issues. |
 
 ---
@@ -43,6 +45,7 @@ Full index of every script in this repo, organized by category.
 |---|---|
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
 | [cli-workflow-recorder](tools/cli-workflow-recorder/) | Record a sequence of terminal tasks and turn it into a reusable, parameterized workflow. |
+| [config-migration-tool](tools/config-migration-tool/) | Convert old configuration schemas to new versions with automatic backups and migration reports. |
 | [csv-cleaner](tools/csv-cleaner/) | Detects encoding, delimiter, duplicates, malformed dates, empty columns, and type problems in CSVs. |
 | [data-export-searcher](tools/data-export-searcher/) | Search archives from chat apps, email, or social platforms locally with advanced query filters. |
 | [data-pipeline-diff](tools/data-pipeline-diff/) | Compare two CSV, JSON, or database outputs and explain exactly what changed. |
@@ -62,5 +65,6 @@ Full index of every script in this repo, organized by category.
 | [screenshot-organizer](tools/screenshot-organizer/) | Sorts screenshots by date, OCR text content, app/window clues, and duplicate similarity. |
 | [space-investigator](tools/space-investigator/) | Explains what consumes storage, detects unusually large folders, and exports a report. |
 | [subtitle-fixer](tools/subtitle-fixer/) | Shift timing, repair encoding, remove duplicates, and convert subtitle formats (SRT/VTT/ASS). |
+| [system-change-tracker](tools/system-change-tracker/) | Snapshot and diff system state (directories, environment variables, Python/OS packages, services) to audit what was modified during an installation. |
 | [universal-export-converter](tools/universal-export-converter/) | Normalize exports from different services into clean JSON/CSV with a plugin architecture. |
 | [webhook-debugger](tools/webhook-debugger/) | Receive webhooks locally, inspect headers/payloads, replay requests, and compare deliveries. |
