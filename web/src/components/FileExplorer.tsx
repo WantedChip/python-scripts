@@ -28,17 +28,16 @@ interface FileExplorerProps {
 export default function FileExplorer({
   fileTree,
   scriptPath,
-  scriptName,
   initialFilePath,
 }: FileExplorerProps) {
   // Find a default selected file (README.md or mainFile)
   const findDefaultFile = (nodes: FileNode[]): string | null => {
     // Try to find README.md first
-    let readme = findFileByName(nodes, "README.md");
+    const readme = findFileByName(nodes, "README.md");
     if (readme) return readme;
 
     // Fallback: first .py file in list
-    let pyFile = findFileByExtension(nodes, ".py");
+    const pyFile = findFileByExtension(nodes, ".py");
     if (pyFile) return pyFile;
 
     // Fallback: first actual file in tree
@@ -108,6 +107,7 @@ export default function FileExplorer({
         setExpandedDirs(newExpanded);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileTree, initialFilePath]);
 
   // Load file content when selection changes
@@ -137,15 +137,17 @@ export default function FileExplorer({
             lang: data.lang,
           },
         }));
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        setError(err.message || "Error reading file content.");
+        const message = err instanceof Error ? err.message : "Error reading file content.";
+        setError(message);
       } finally {
         setLoadingPath(null);
       }
     };
 
     fetchContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPath, scriptPath]);
 
   // File icons picker
@@ -326,7 +328,7 @@ export default function FileExplorer({
       </div>
       
       {/* CSS adjustments for Shiki output layout inside global stylesheet context */}
-      <style jsx global>{`
+      <style>{`
         .shiki-view pre {
           background-color: transparent !important;
           margin: 0 !important;
