@@ -33,7 +33,7 @@ export function matchStrict(
 
   if (config.ignoreSeparators) {
     const { stripped: qStripped } = stripSeparators(normalizedQuery);
-    const { stripped: tStripped, indexMap } = stripSeparators(normalizedText);
+    const { stripped: tStripped } = stripSeparators(normalizedText);
 
     if (!qStripped || qStripped.length > tStripped.length) {
       return { text, matches };
@@ -41,15 +41,6 @@ export function matchStrict(
 
     let pos = tStripped.indexOf(qStripped);
     while (pos !== -1) {
-      // Map back to normalizedText index offsets
-      const normStart = indexMap[pos];
-      const normEnd = indexMap[pos + qStripped.length - 1] + 1;
-
-      // Now map normalizedText offsets back to original text offsets
-      // Since normalizedText just collapsed spaces/lowercase/NFKC, let's map normalized indices.
-      // Wait, is it simpler to normalize and map directly?
-      // Actually, if we map directly from original text, it's even safer!
-      // Let's write a direct mapper from original text to stripped text!
       pos = tStripped.indexOf(qStripped, pos + 1);
     }
   }
@@ -57,10 +48,6 @@ export function matchStrict(
   // Let's make a robust mapper from original text to normalized/stripped text!
   // To avoid complex character mappings for NFKC, let's build the mapping from the original text directly.
   // Original text character-by-character mapping:
-  const origToNormalizedMap: number[] = []; // maps index in normalized/stripped to index in original
-  let processedText = "";
-  
-  // We normalize but we want to know which char in processedText maps to which char in original.
   // A simpler way: since we are case-insensitive and whitespace-collapsed, let's just match on original text
   // with a sliding pointer, or map the indices.
   // Let's build a character map:
