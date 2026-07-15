@@ -151,10 +151,11 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Download handler error:", error);
+    const message = error instanceof Error ? error.message : "An unexpected error occurred during download.";
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred during download." },
+      { error: message },
       { status: 500 }
     );
   }
