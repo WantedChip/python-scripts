@@ -33,6 +33,7 @@ Full index of every script in this repo, organized by category.
 | [developer-machine-doctor](checkers/developer-machine-doctor/) | Diagnose PATH issues, Python environments, missing dependencies, port conflicts, disk problems, and permissions. |
 | [env-auditor](checkers/env-auditor/) | Compares `.env`, `.env.example`, Docker files, and source code to find missing or unused variables. |
 | [env-diff](checkers/env-diff/) | Compare local and target environments to debug execution mismatches. |
+| [gitignore-explain](checkers/gitignore-explain/) | Explain exactly which rule ignored a file, where that rule came from, and how to fix it. |
 | [expiry-monitor](checkers/expiry-monitor/) | Evaluates domain WHOIS registration and SSL certificate validity days remaining. |
 | [link-checker](checkers/link-checker/) | Crawls a website or scans local Markdown/HTML files and reports dead links, redirects, and timeouts. |
 | [pip-why](checkers/pip-why/) | Audits why Python packages are installed, who depends on them, and version conflicts. |
@@ -49,8 +50,11 @@ Full index of every script in this repo, organized by category.
 | Script | Description |
 |---|---|
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
+| [branch-graveyard](tools/branch-graveyard/) | Find local and remote branches that are merged, abandoned, duplicated, or attached to closed PRs, with a safe interactive cleanup mode. |
+| [changelog-from-reality](tools/changelog-from-reality/) | Compare releases or tags and generate a factual changelog from actual code changes rather than relying only on commit-message quality. |
 | [cli-workflow-recorder](tools/cli-workflow-recorder/) | Record a sequence of terminal tasks and turn it into a reusable, parameterized workflow. |
 | [config-migration-tool](tools/config-migration-tool/) | Convert old configuration schemas to new versions with automatic backups and migration reports. |
+| [commit-splitter](tools/commit-splitter/) | Analyze a messy working tree and suggest logical groups of files or hunks that should become separate commits. |
 | [csv-cleaner](tools/csv-cleaner/) | Detects encoding, delimiter, duplicates, malformed dates, empty columns, and type problems in CSVs. |
 | [data-export-searcher](tools/data-export-searcher/) | Search archives from chat apps, email, or social platforms locally with advanced query filters. |
 | [data-pipeline-diff](tools/data-pipeline-diff/) | Compare two CSV, JSON, or database outputs and explain exactly what changed. |
@@ -60,7 +64,10 @@ Full index of every script in this repo, organized by category.
 | [file-quarantine-cleaner](tools/file-quarantine-cleaner/) | Identify old installers, archives, cache files, and abandoned downloads, but require confirmation before deletion. |
 | [file-renamer](tools/file-renamer/) | Bulk rename with regex, numbering, date cleanup, preview mode, and full undo/rollback support. |
 | [folder-snapshot](tools/folder-snapshot/) | Records a directory's state as a JSON snapshot and diffs two snapshots to show changes. |
+| [fresh-machine](tools/fresh-machine/) | Export your developer setup (packages, Git config, shell aliases, editor extensions, Python tools) and recreate it elsewhere. |
+| [gift-idea-generator](tools/gift-idea-generator/) | Suggests personalized gift ideas based on recipient age, budget, relationship, and interests. |
 | [git-cleanup](tools/git-cleanup/) | Finds large files, stale branches, ignored junk, and accidentally committed secrets in a git repo. |
+| [git-time-machine](tools/git-time-machine/) | Automate Git history investigations to find when config values changed, when dependencies were introduced, and when files grew beyond size limits. |
 | [history-analyzer](tools/history-analyzer/) | Analyze shell history locally to find frequent commands and suggest aliases. |
 | [image-optimizer](tools/image-optimizer/) | Recursively resize, compress, and convert images while preserving originals and metadata. |
 | [issue-reproducer](tools/issue-reproducer/) | Unpack a bug ZIP bundle, recreate its virtual environment, and run the failed command to reproduce the issue. |
@@ -70,9 +77,14 @@ Full index of every script in this repo, organized by category.
 | [port-inspector](tools/port-inspector/) | Audits listening/active network ports, displays process owner metadata, and kills target processes safely. |
 | [port-story](tools/port-story/) | Trace process ancestry, cmdline, CWD, and heuristics (Docker, dev servers) of port owners. |
 | [project-bootstrapper](tools/project-bootstrapper/) | Generate custom Python structures with standard linters, pytest configurations, and GitHub CI workflow matrix. |
+| [random-name-generator](tools/random-name-generator/) | Generates randomized name suggestions for people, projects, and pets with optional alliteration. |
+| [repo-size-history](tools/repo-size-history/) | Show exactly when a repository became bloated and which commits/files caused the growth. |
+| [recipe-scaler-tool](tools/recipe-scaler-tool/) | Scales recipe ingredient quantities with metric/imperial conversion and fraction formatting. |
 | [screenshot-organizer](tools/screenshot-organizer/) | Sorts screenshots by date, OCR text content, app/window clues, and duplicate similarity. |
 | [space-investigator](tools/space-investigator/) | Explains what consumes storage, detects unusually large folders, and exports a report. |
 | [subtitle-fixer](tools/subtitle-fixer/) | Shift timing, repair encoding, remove duplicates, and convert subtitle formats (SRT/VTT/ASS). |
 | [system-change-tracker](tools/system-change-tracker/) | Snapshot and diff system state (directories, environment variables, Python/OS packages, services) to audit what was modified during an installation. |
+| [travel-itinerary-planner](tools/travel-itinerary-planner/) | Builds customized day-by-day travel itineraries based on budget, style, and pace constraints. |
 | [universal-export-converter](tools/universal-export-converter/) | Normalize exports from different services into clean JSON/CSV with a plugin architecture. |
 | [webhook-debugger](tools/webhook-debugger/) | Receive webhooks locally, inspect headers/payloads, replay requests, and compare deliveries. |
+| [workout-plan-generator](tools/workout-plan-generator/) | Generates personalized weekly workout programs tailored to fitness goals, skill level, and equipment. |
