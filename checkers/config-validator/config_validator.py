@@ -14,11 +14,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # pylint: disable=import-error
 import jsonschema
-import yaml  # type: ignore[import-untyped]
+import yaml
 from jsonschema.validators import validator_for
 
 # isort: off
-from yaml.nodes import MappingNode  # type: ignore[import-untyped]
+from yaml.nodes import MappingNode
 from yaml.nodes import ScalarNode
 from yaml.nodes import SequenceNode
 
@@ -260,7 +260,7 @@ def parse_yaml_with_positions(
     try:
         node = loader.get_single_node()
     finally:
-        loader.dispose()
+        loader.dispose()  # type: ignore[no-untyped-call,unused-ignore]
 
     if node is None:
         return None, {}
