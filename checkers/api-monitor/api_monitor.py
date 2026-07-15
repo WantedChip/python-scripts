@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional
 # pylint: disable=import-error
 import jsonschema
 import requests
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 def check_ssl_expiry(url: str, warn_days: int = 15) -> Dict[str, Any]:
