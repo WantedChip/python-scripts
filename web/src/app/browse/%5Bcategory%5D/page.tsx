@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, ShieldAlert, Cpu, ShieldCheck, Code2 } from "lucide-react";
+import { ArrowLeft, Play, Cpu, ShieldCheck, Code2 } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { Script } from "@/lib/search/types";
 import TierBadge from "@/components/TierBadge";
