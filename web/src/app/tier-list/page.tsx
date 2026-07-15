@@ -13,27 +13,27 @@ const TIER_ORDER: Tier[] = ["S", "A", "B", "C", "D", "Unranked"];
 const TIER_DESCRIPTIONS: Record<Tier, { title: string; desc: string }> = {
   S: {
     title: "S-Tier: Gold Standard",
-    desc: "Exceptional quality. Coverage >= 95% with 0 external dependencies (pure stdlib).",
+    desc: "Exceptional quality. Coverage ≥ 95% with 0 external dependencies (pure stdlib). 4/4 points.",
   },
   A: {
     title: "A-Tier: Highly Reliable",
-    desc: "Great quality. Coverage >= 90% with minimal (1-2) external dependencies.",
+    desc: "High quality. Coverage ≥ 95% with 1–2 deps, OR coverage 90–94% with 0 deps. 3/4 points.",
   },
   B: {
-    title: "B-Tier: Standard Utilities",
-    desc: "Good coverage (80-89%) or pure standard library tools with decent verification.",
+    title: "B-Tier: Solid Utilities",
+    desc: "Good quality. Coverage 90–94% with 1–2 deps, OR coverage ≥ 95% with 3+ deps, OR pure stdlib with 80–89% coverage. 2/4 points.",
   },
   C: {
-    title: "C-Tier: Verifiable",
-    desc: "Working tools with lower coverage (<80%) or higher external dependency footprints.",
+    title: "C-Tier: Functional",
+    desc: "Coverage 80–89% with 1–2 external dependencies. Meets the floor but limited test depth or footprint. 1/4 points.",
   },
   D: {
     title: "D-Tier: Basic Implementations",
-    desc: "Unverified tools or legacy scripts needing quality sweeps and tests.",
+    desc: "Coverage 80–89% with 3+ external dependencies. Clears the mandatory floor but earns no bonus points on either signal. 0/4 points.",
   },
   Unranked: {
     title: "Unranked: Awaiting Verification",
-    desc: "Scripts that haven't defined standardized quality readouts inside their README.",
+    desc: "Scripts that haven't defined standardized quality readouts inside their README. Not the same as D-Tier.",
   },
 };
 
@@ -88,7 +88,7 @@ export default function TierListPage() {
           </h1>
           <p className="text-sm text-[var(--text-muted)] max-w-2xl leading-relaxed">
             Every script rated from S-tier to D-tier based on verifiable repository signals: 
-            pylint ratings, unit test coverage percentages, and external dependency counts.
+            unit test coverage percentages and external dependency counts.
           </p>
         </div>
 

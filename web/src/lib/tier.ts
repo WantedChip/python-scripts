@@ -3,22 +3,23 @@ export type Tier = "S" | "A" | "B" | "C" | "D" | "Unranked";
 /**
  * Calculates a script's Quality Tier (S -> D, or Unranked) based on public signals:
  * - Coverage:
- *   - 95-100% -> 3 pts
- *   - 90-94%  -> 2 pts
- *   - 80-89%  -> 1 pt
- *   - <80% or unranked -> 0 pts
+ *   - 95-100% -> 2 pts
+ *   - 90-94%  -> 1 pt
+ *   - 80-89%  -> 0 pts  (clearing the mandatory floor earns nothing)
+ *   - <80%    -> 0 pts  (below floor — should not occur in this repo)
  * - Dependencies:
- *   - 0 dependencies  -> +2 pts
+ *   - 0 dependencies   -> +2 pts
  *   - 1-2 dependencies -> +1 pt
  *   - 3+ dependencies  -> +0 pts
  *
- * Points to Tier mapping:
- * - 5 pts -> S
- * - 4 pts -> A
- * - 3 pts -> B
- * - 2 pts -> C
- * - 1 pt  -> D
- * - 0 pts / Unranked -> Unranked (shown as "Unranked" in the UI)
+ * Total range: 0–4 pts → 5 live tiers:
+ * - 4 pts -> S
+ * - 3 pts -> A
+ * - 2 pts -> B
+ * - 1 pt  -> C
+ * - 0 pts -> D
+ *
+ * Scripts missing the Quality line in their README are "Unranked" (separate state).
  */
 export function calculateTier(
   coveragePct: number | null,
@@ -31,14 +32,13 @@ export function calculateTier(
 
   let pts = 0;
 
-  // 1. Coverage points
+  // 1. Coverage points (0 pts for merely clearing the 80% mandatory floor)
   if (coveragePct >= 95) {
-    pts += 3;
-  } else if (coveragePct >= 90) {
     pts += 2;
-  } else if (coveragePct >= 80) {
+  } else if (coveragePct >= 90) {
     pts += 1;
   }
+  // 80-89%: +0 pts (floor clearance, not a quality signal)
 
   // 2. Dependency points
   if (depCount === 0) {
@@ -47,20 +47,19 @@ export function calculateTier(
     pts += 1;
   }
 
-  // 3. Mapping
+  // 3. Mapping (total range 0–4, all five tiers reachable)
   switch (pts) {
-    case 5:
-      return "S";
     case 4:
-      return "A";
+      return "S";
     case 3:
-      return "B";
+      return "A";
     case 2:
-      return "C";
+      return "B";
     case 1:
-      return "D";
+      return "C";
     default:
-      return "Unranked";
+      // 0 pts: ranked but no exceptional signals → D
+      return "D";
   }
 }
 
