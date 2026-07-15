@@ -11,10 +11,8 @@ import sys
 from pathlib import Path
 from typing import Optional, cast
 
-from PIL import Image
-
 # pylint: disable=import-error, duplicate-code
-
+from PIL import Image
 
 logger = logging.getLogger("image_optimizer")
 

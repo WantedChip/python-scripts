@@ -11,9 +11,8 @@ import sys
 from pathlib import Path
 from typing import List, Set
 
-from pypdf import PdfReader, PdfWriter
-
 # pylint: disable=import-error, duplicate-code
+from pypdf import PdfReader, PdfWriter
 
 # Setup logger
 logger = logging.getLogger("pdf_toolkit")

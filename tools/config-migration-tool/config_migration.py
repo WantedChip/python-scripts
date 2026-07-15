@@ -16,7 +16,7 @@ from typing import Any, Callable, Optional
 
 # Try importing yaml, jsonschema, and tomllib
 try:
-    import yaml  # type: ignore[import-untyped]
+    import yaml
 
     HAS_YAML = True
 except ImportError:
