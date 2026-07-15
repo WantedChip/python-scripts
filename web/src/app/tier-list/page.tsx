@@ -2,11 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Layers, HelpCircle } from "lucide-react";
+import { Terminal, ArrowRight } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { Script } from "@/lib/search/types";
 import { calculateTier, getTierStyle, Tier } from "@/lib/tier";
-import TierBadge from "@/components/TierBadge";
 
 // Ordered list of tiers for rendering sequence
 const TIER_ORDER: Tier[] = ["S", "A", "B", "C", "D", "Unranked"];
