@@ -34,8 +34,6 @@ export default function HomePage() {
   const categories = getCategories(scripts);
   const totalScripts = scripts.length;
   const totalCategories = categories.length;
-  const scriptsWithTests = scripts.filter((s) => s.hasTests).length;
-  const zeroDepScripts = scripts.filter((s) => s.requirements.length === 0).length;
 
   // Group by category for the preview grid
   const categorySummary = categories.map((cat) => ({
@@ -285,6 +283,7 @@ export default function HomePage() {
 
 /* ─── Sub-components ────────────────────────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StatCard({ value, label }: { value: number; label: string }) {
   return (
     <div className="text-center">
