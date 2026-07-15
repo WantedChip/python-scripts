@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Terminal, Search, HelpCircle, Home, FolderOpen, ArrowRight, Check, Download, Layers } from "lucide-react";
+import { Terminal, HelpCircle, Home, FolderOpen, ArrowRight, Check, Download, Layers } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { searchScripts } from "@/lib/search";
 import { Script, FileNode } from "@/lib/search/types";
