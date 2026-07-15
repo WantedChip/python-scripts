@@ -238,3 +238,14 @@ pre {
   background-color: var(--surface-raised)/20;
 }
 
+/* ─── Scripts Detail Page Layout Tweaks ───────────────────────────────────── */
+body:has(.scripts-detail-page) footer {
+  display: none !important;
+}
+
+body:has(.scripts-detail-page) main {
+  overflow: hidden !important;
+  height: calc(100vh - 57px) !important;
+}
+
+

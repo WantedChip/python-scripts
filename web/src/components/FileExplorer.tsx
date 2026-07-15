@@ -234,7 +234,7 @@ export default function FileExplorer({
   const isReadme = selectedPath?.toLowerCase().endsWith(".md");
 
   return (
-    <div className="flex flex-col border border-[var(--border)] bg-[var(--surface)] rounded-xl overflow-hidden min-h-[520px] h-[65vh]">
+    <div className="flex flex-col bg-[var(--surface)] overflow-hidden h-full w-full">
       {/* Mobile Top Header */}
       <div className="flex md:hidden items-center justify-between px-4 py-3 bg-[var(--surface-raised)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2 text-xs font-mono text-[var(--text)]">
@@ -307,7 +307,7 @@ export default function FileExplorer({
             ) : activeData ? (
               isReadme ? (
                 // Markdown Renderer (README.md)
-                <div className="max-w-2xl mx-auto py-2">
+                <div className="w-full py-2 markdown-content">
                   <MarkdownRenderer content={activeData.content} />
                 </div>
               ) : (
