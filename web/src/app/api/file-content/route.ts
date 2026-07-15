@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHighlighter } from "shiki";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let highlighterInstance: any = null;
 
 // Initialize and cache the Shiki highlighter singleton
@@ -87,10 +88,11 @@ export async function GET(request: NextRequest) {
       highlightedHtml,
       lang,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("File content handler error:", error);
+    const message = error instanceof Error ? error.message : "An unexpected error occurred reading the file.";
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred reading the file." },
+      { error: message },
       { status: 500 }
     );
   }
