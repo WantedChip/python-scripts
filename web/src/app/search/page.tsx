@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Info, HelpCircle, Shield, Cpu, Play } from "lucide-react";
+import { Search, Info, HelpCircle } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
 import { searchScripts } from "@/lib/search";
 import { matchBroad } from "@/lib/search/modes/broad";
@@ -132,7 +132,7 @@ export default function SearchPage() {
         <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-dim)]">
           <span>Query:</span>
           <code className="text-[var(--accent)] bg-[var(--surface)] px-1 rounded">
-            "{detail.exampleQuery}"
+            &quot;{detail.exampleQuery}&quot;
           </code>
         </div>
         <div className="text-[10px] leading-relaxed text-[var(--text-muted)]">
