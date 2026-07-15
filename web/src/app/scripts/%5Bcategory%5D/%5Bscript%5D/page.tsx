@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Github, Terminal, CheckCircle2, AlertCircle } from "lucide-react";
 import scriptsData from "@/data/scripts.json";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
 import DownloadButtons from "@/components/DownloadButtons";
 import FileExplorer from "@/components/FileExplorer";
 import TierBadge from "@/components/TierBadge";
