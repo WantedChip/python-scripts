@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Download, FileCode, Archive, Loader2, AlertCircle } from "lucide-react";
+import { FileCode, Archive, Loader2, AlertCircle } from "lucide-react";
 
 interface DownloadButtonsProps {
   path: string;
@@ -33,9 +33,10 @@ export default function DownloadButtons({ path, scriptName }: DownloadButtonsPro
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An error occurred during ZIP creation.");
+      const message = err instanceof Error ? err.message : "An error occurred during ZIP creation.";
+      setError(message);
     } finally {
       setDownloadingZip(false);
     }
