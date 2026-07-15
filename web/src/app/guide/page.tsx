@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Terminal, Keyboard, Search, Download, HelpCircle, ExternalLink, ArrowRight } from "lucide-react";
+import { Keyboard, Search, Download, ExternalLink, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Guide",
@@ -111,27 +111,27 @@ export default function GuidePage() {
                 <tr>
                   <td className="p-3 font-bold text-[var(--accent)]">Broad</td>
                   <td className="p-3 text-[var(--text-muted)]">Tokenizes terms; requires all tokens present in text. Matches in any order.</td>
-                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">"red apple"</code> matches "apple that is red"</td>
+                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">&quot;red apple&quot;</code> matches &quot;apple that is red&quot;</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-[var(--accent)]">Strict</td>
                   <td className="p-3 text-[var(--text-muted)]">Matches the exact case-insensitive normalized substring.</td>
-                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">"env file"</code> matches "load the env file"</td>
+                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">&quot;env file&quot;</code> matches &quot;load the env file&quot;</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-[var(--accent)]">Whole Word</td>
                   <td className="p-3 text-[var(--text-muted)]">Matches only standalone words bounded by spacing or punctuation.</td>
-                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">"cat"</code> matches "the cat." but not "category"</td>
+                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">&quot;cat&quot;</code> matches &quot;the cat.&quot; but not &quot;category&quot;</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-[var(--accent)]">Substring</td>
                   <td className="p-3 text-[var(--text-muted)]">Simple case-insensitive search matching occurrences inside other words.</td>
-                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">"cat"</code> matches both "cat" and "category"</td>
+                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">&quot;cat&quot;</code> matches both &quot;cat&quot; and &quot;category&quot;</td>
                 </tr>
                 <tr>
                   <td className="p-3 font-bold text-[var(--accent)]">Fuzzy</td>
                   <td className="p-3 text-[var(--text-muted)]">Typo-tolerant approximate search. Requires query length &gt;= 3.</td>
-                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">"javascrit"</code> matches "javascript"</td>
+                  <td className="p-3"><code className="text-[var(--text)] bg-[var(--surface-raised)] px-1 rounded">&quot;javascrit&quot;</code> matches &quot;javascript&quot;</td>
                 </tr>
               </tbody>
             </table>
