@@ -41,6 +41,8 @@ Full index of every script in this repo, organized by category.
 | [repository-documentation-auditor](checkers/repository-documentation-auditor/) | Detect missing setup instructions, dead commands, undocumented environment variables, and stale README references. |
 | [secret-leak-scanner](checkers/secret-leak-scanner/) | Detect sensitive API keys, credentials, database connection strings, and private SSH keys in local files or git staged commits, providing remediation steps. |
 | [sqlite-inspector](checkers/sqlite-inspector/) | Audit SQLite databases, summarizing tables, null patterns, duplicate rows, and schema issues. |
+| [test-gap](checkers/test-gap/) | Compare changed code with executed tests and report important changed paths that were never exercised. |
+| [workflow-lint-plus](checkers/workflow-lint-plus/) | Find duplicate jobs, unpinned actions, impossible conditions, unnecessary matrix combinations, missing timeouts, and cache mistakes. |
 | [works-on-my-machine](checkers/works-on-my-machine/) | Inspect a Python project and generate a reproducibility report covering Python version, OS assumptions, environment variables, external binaries, ports, package versions, and undeclared system dependencies. |
 
 ---
@@ -52,6 +54,8 @@ Full index of every script in this repo, organized by category.
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
 | [branch-graveyard](tools/branch-graveyard/) | Find local and remote branches that are merged, abandoned, duplicated, or attached to closed PRs, with a safe interactive cleanup mode. |
 | [changelog-from-reality](tools/changelog-from-reality/) | Compare releases or tags and generate a factual changelog from actual code changes rather than relying only on commit-message quality. |
+| [ci-failure-deduper](tools/ci-failure-deduper/) | Group multiple CI log failures by root cause instead of making developers inspect jobs separately. |
+| [ci-local](tools/ci-local/) | Translate a GHA CI workflow to local reproduction command lines. |
 | [cli-workflow-recorder](tools/cli-workflow-recorder/) | Record a sequence of terminal tasks and turn it into a reusable, parameterized workflow. |
 | [config-migration-tool](tools/config-migration-tool/) | Convert old configuration schemas to new versions with automatic backups and migration reports. |
 | [commit-splitter](tools/commit-splitter/) | Analyze a messy working tree and suggest logical groups of files or hunks that should become separate commits. |
@@ -63,6 +67,7 @@ Full index of every script in this repo, organized by category.
 | [expense-parser](tools/expense-parser/) | Parse messy bank-export CSVs into normalized categories and monthly spending summaries. |
 | [file-quarantine-cleaner](tools/file-quarantine-cleaner/) | Identify old installers, archives, cache files, and abandoned downloads, but require confirmation before deletion. |
 | [file-renamer](tools/file-renamer/) | Bulk rename with regex, numbering, date cleanup, preview mode, and full undo/rollback support. |
+| [flaky-test-hunter](tools/flaky-test-hunter/) | Run tests repeatedly with randomized ordering/timing to rank flaky tests. |
 | [folder-snapshot](tools/folder-snapshot/) | Records a directory's state as a JSON snapshot and diffs two snapshots to show changes. |
 | [fresh-machine](tools/fresh-machine/) | Export your developer setup (packages, Git config, shell aliases, editor extensions, Python tools) and recreate it elsewhere. |
 | [gift-idea-generator](tools/gift-idea-generator/) | Suggests personalized gift ideas based on recipient age, budget, relationship, and interests. |
