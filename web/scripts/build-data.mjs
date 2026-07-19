@@ -18,6 +18,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { writeFileSync, mkdirSync } from "fs";
 import { join, resolve, dirname, relative } from "path";
 import { fileURLToPath } from "url";
+import { minimatch } from "minimatch";
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
@@ -153,17 +154,74 @@ function parseRequirements(content) {
 }
 
 /**
- * Recursively scan folder contents to compile hierarchical file trees without source contents
+ * Parse gitignore patterns from a .gitignore file.
+ * Returns an array of pattern strings.
  */
-function buildFileTree(dirAbsPath, baseAbsPath) {
+function parseGitignorePatterns(filePath) {
+  try {
+    const content = readFileSync(filePath, "utf8");
+    return content
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#") && !l.startsWith("!"));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Check whether a relative path (from script root) should be ignored,
+ * based on the combined gitignore patterns.
+ */
+function isIgnoredByPatterns(relPath, name, isDir, patterns) {
+  // Always hard-ignore these regardless of .gitignore
+  const alwaysIgnoreDirs = new Set([".git", "node_modules"]);
+  if (isDir && alwaysIgnoreDirs.has(name)) return true;
+
+  // Never show hidden dot-files/dirs that are not source (except .gitignore itself)
+  // .gitignore is a valid file to show; others like .coverage, .mypy_cache are build artifacts
+  if (name.startsWith(".") && name !== ".gitignore" && name !== ".env.example") return true;
+
+  for (const pattern of patterns) {
+    // Strip leading slash for matching (makes root-relative patterns work)
+    const cleanPattern = pattern.startsWith("/") ? pattern.slice(1) : pattern;
+    // Directory-only pattern (trailing slash)
+    if (cleanPattern.endsWith("/")) {
+      if (!isDir) continue;
+      const dirPattern = cleanPattern.slice(0, -1);
+      if (minimatch(name, dirPattern, { dot: true }) || minimatch(relPath, dirPattern, { dot: true })) return true;
+    } else {
+      // Match both the name alone and the relative path
+      if (
+        minimatch(name, cleanPattern, { dot: true }) ||
+        minimatch(relPath, cleanPattern, { dot: true }) ||
+        minimatch(relPath, `**/${cleanPattern}`, { dot: true })
+      ) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Recursively scan folder contents to compile hierarchical file trees.
+ * Respects .gitignore patterns so the tree matches exactly what GitHub serves.
+ */
+function buildFileTree(dirAbsPath, baseAbsPath, patterns) {
+  // On first call (baseAbsPath === dirAbsPath), load patterns from:
+  // 1. Repo-root .gitignore
+  // 2. Script-level .gitignore (if any)
+  if (!patterns) {
+    const rootPatterns = parseGitignorePatterns(join(REPO_ROOT, ".gitignore"));
+    const localPatterns = parseGitignorePatterns(join(dirAbsPath, ".gitignore"));
+    patterns = [...rootPatterns, ...localPatterns];
+  }
+
   const nodes = [];
-  const ignoredDirs = new Set(["__pycache__", ".pytest_cache", ".git", ".venv", "dist", "build", "node_modules"]);
-  const ignoredFiles = new Set([".DS_Store", "Thumbs.db", ".env"]);
 
   try {
     const entries = readdirSync(dirAbsPath, { withFileTypes: true });
 
-    // Sort entries to show directories first, then files alphabetically
+    // Sort: directories first, then alphabetically
     entries.sort((a, b) => {
       if (a.isDirectory() && !b.isDirectory()) return -1;
       if (!a.isDirectory() && b.isDirectory()) return 1;
@@ -171,11 +229,17 @@ function buildFileTree(dirAbsPath, baseAbsPath) {
     });
 
     for (const entry of entries) {
+      const absPath = join(dirAbsPath, entry.name);
+      const relPath = relative(baseAbsPath, absPath).replace(/\\/g, "/");
+
       if (entry.isDirectory()) {
-        if (ignoredDirs.has(entry.name)) continue;
-        const subAbs = join(dirAbsPath, entry.name);
-        const children = buildFileTree(subAbs, baseAbsPath);
-        const relPath = relative(baseAbsPath, subAbs).replace(/\\/g, "/");
+        if (isIgnoredByPatterns(relPath, entry.name, true, patterns)) continue;
+        // Load any nested .gitignore and merge patterns
+        const nestedPatterns = parseGitignorePatterns(join(absPath, ".gitignore"));
+        const mergedPatterns = nestedPatterns.length > 0
+          ? [...patterns, ...nestedPatterns]
+          : patterns;
+        const children = buildFileTree(absPath, baseAbsPath, mergedPatterns);
         nodes.push({
           name: entry.name,
           path: relPath,
@@ -183,10 +247,8 @@ function buildFileTree(dirAbsPath, baseAbsPath) {
           children,
         });
       } else if (entry.isFile()) {
-        if (ignoredFiles.has(entry.name) || entry.name.endsWith(".pyc")) continue;
-        const fileAbs = join(dirAbsPath, entry.name);
-        const stats = statSync(fileAbs);
-        const relPath = relative(baseAbsPath, fileAbs).replace(/\\/g, "/");
+        if (isIgnoredByPatterns(relPath, entry.name, false, patterns)) continue;
+        const stats = statSync(absPath);
         nodes.push({
           name: entry.name,
           path: relPath,
