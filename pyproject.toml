@@ -19,3 +19,6 @@ extend-exclude = '''
 # matrix, so a coverage discrepancy always points to a real test/code issue
 # rather than "which engine happened to run."
 core = "ctrace"
+
+[tool.pylint.messages_control]
+disable = ["duplicate-code"]
