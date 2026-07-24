@@ -15,3 +15,7 @@ full_adjacent
 do_OPTIONS
 do_HEAD
 tesseract_cmd
+victim_test
+culprit_tests
+seed_used
+reproduce_command
