@@ -11,7 +11,7 @@ import re
 import sys
 from typing import Any, Dict, List
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # SHA-1 hash regex check (40 characters hex)
 SHA_PIN_PATTERN = re.compile(r"@[a-f0-9]{40}$")

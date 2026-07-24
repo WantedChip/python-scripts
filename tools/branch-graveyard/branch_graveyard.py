@@ -182,6 +182,7 @@ def fetch_closed_prs_via_api(
 class BranchInfo:  # pylint: disable=too-few-public-methods
     """Stores information about a Git branch."""
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         name: str,

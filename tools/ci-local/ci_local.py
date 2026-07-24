@@ -11,7 +11,7 @@ import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # Standard GitHub actions mapping to local commands or notes
 STANDARD_ACTIONS = {

@@ -107,6 +107,7 @@ def get_file_content(repo_path: str, ref: str, path: str) -> Optional[str]:
 class FunctionInfo:  # pylint: disable=too-few-public-methods
     """Stores structural signature info for a function or method."""
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         name: str,

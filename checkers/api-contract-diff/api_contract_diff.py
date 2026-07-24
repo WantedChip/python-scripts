@@ -13,7 +13,7 @@ import os
 import sys
 from typing import Any, Dict, List, Set, Tuple
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 # Set up logger
 logger = logging.getLogger("api_contract_diff")
