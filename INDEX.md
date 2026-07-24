@@ -94,6 +94,8 @@ Full index of every script in this repo, organized by category.
 | [data-export-searcher](tools/data-export-searcher/) | Search archives from chat apps, email, or social platforms locally with advanced query filters. |
 | [data-peek](tools/data-peek/) | One command to inspect CSV, TSV, JSON, JSONL, Parquet, SQLite, and Excel: schema, row count, nulls, sample values, suspicious columns, and basic stats. |
 | [data-pipeline-diff](tools/data-pipeline-diff/) | Compare two CSV, JSON, or database outputs and explain exactly what changed. |
+| [dependency-change-impact](tools/dependency-change-impact/) | Scan project codebase using Python AST before upgrading a dependency to locate affected imports and breaking API call sites. |
+| [dependency-why](tools/dependency-why/) | Display dependency chains, project components importing a package, and consequences of removing it. |
 | [diff-story](tools/diff-story/) | Turn a large Git diff patch into a structured narrative: behavioral edits, refactors, dependencies, and risk flags. |
 | [document-deduper](tools/document-deduper/) | Detect near-duplicate PDFs and documents even when filenames and metadata differ. |
 | [duplicate-finder](tools/duplicate-finder/) | Scans directories for duplicate files by content hash and optionally moves them to quarantine. |
@@ -120,6 +122,7 @@ Full index of every script in this repo, organized by category.
 | [log-analyzer](tools/log-analyzer/) | Parses large log files line-by-line, masks variables to group error occurrences, and flags rate spikes. |
 | [log-merge](tools/log-merge/) | Give it logs from multiple services, normalize timestamps, sort events into one timeline, collapse duplicate errors, and show context. |
 | [mock-from-traffic](tools/mock-from-traffic/) | Record application dev traffic, sanitize credentials and fields, and save local mock response files. |
+| [minimal-reproducer](tools/minimal-reproducer/) | Automatically shrink a failing JSON, CSV, or config file to find the smallest input reproducing a failure. |
 | [pdf-toolkit](tools/pdf-toolkit/) | Merge, split, rotate, extract, compress, and rename PDFs from one CLI. |
 | [port-conflict-doctor](tools/port-conflict-doctor/) | Diagnose 'address already in use' port conflicts, explaining process owners and recommending safe kills. |
 | [port-inspector](tools/port-inspector/) | Audits listening/active network ports, displays process owner metadata, and kills target processes safely. |
@@ -128,6 +131,7 @@ Full index of every script in this repo, organized by category.
 | [project-bootstrapper](tools/project-bootstrapper/) | Generate custom Python structures with standard linters, pytest configurations, and GitHub CI workflow matrix. |
 | [project-resume](tools/project-resume/) | Enter an old project directory after six months and get: what it does, how to run it, last changes, unfinished TODOs, broken dependencies, and likely next steps. |
 | [random-name-generator](tools/random-name-generator/) | Generates randomized name suggestions for people, projects, and pets with optional alliteration. |
+| [repo-bloat-timeline](tools/repo-bloat-timeline/) | Pinpoint when a Git repository grew in size, which commits caused size spikes, and top blob contributors. |
 | [repo-size-history](tools/repo-size-history/) | Show exactly when a repository became bloated and which commits/files caused the growth. |
 | [recipe-scaler-tool](tools/recipe-scaler-tool/) | Scales recipe ingredient quantities with metric/imperial conversion and fraction formatting. |
 | [receipt-normalizer](tools/receipt-normalizer/) | Take messy exported receipts or invoice PDFs and produce standardized local CSV/JSON records. |
@@ -139,6 +143,7 @@ Full index of every script in this repo, organized by category.
 | [stash-manager](tools/stash-manager/) | Git stash manager showing source branch, age, changed files, conflict risk, and safe preview before apply. |
 | [subtitle-fixer](tools/subtitle-fixer/) | Shift timing, repair encoding, remove duplicates, and convert subtitle formats (SRT/VTT/ASS). |
 | [system-change-tracker](tools/system-change-tracker/) | Snapshot and diff system state (directories, environment variables, Python/OS packages, services) to audit what was modified during an installation. |
+| [test-order-hunter](tools/test-order-hunter/) | Randomize test execution order repeatedly to detect order-dependent flaky tests and culprit state polluters. |
 | [travel-itinerary-planner](tools/travel-itinerary-planner/) | Builds customized day-by-day travel itineraries based on budget, style, and pace constraints. |
 | [universal-export-converter](tools/universal-export-converter/) | Normalize exports from different services into clean JSON/CSV with a plugin architecture. |
 | [webhook-debugger](tools/webhook-debugger/) | Receive webhooks locally, inspect headers/payloads, replay requests, and compare deliveries. |
