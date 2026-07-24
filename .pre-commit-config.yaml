@@ -16,7 +16,6 @@ repos:
     hooks:
       - id: flake8
         args: [--max-line-length=88]
-        exclude: (^|/)vulture_whitelist\.py$
 
   - repo: local
     hooks:
@@ -25,7 +24,7 @@ repos:
         entry: python scripts/run_mypy_grouped.py
         language: system
         types: [python]
-        exclude: (^|/)(tests|vulture_whitelist\.py)
+        exclude: (^|/)tests/
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.9
@@ -38,7 +37,7 @@ repos:
     hooks:
       - id: vulture
         pass_filenames: false
-        args: [".", "--exclude=**/tests/**,**/.venv/**,**/.git/**,**/node_modules/**,**/.next/**"]
+        args: [".", "vulture_whitelist.py", "--exclude=**/tests/**,**/.venv/**,**/.git/**,**/node_modules/**,**/.next/**"]
 
   # pylint needs the project's own runtime deps importable to resolve
   # third-party imports correctly, so it stays a local/system hook rather
@@ -51,4 +50,4 @@ repos:
         entry: pylint
         language: system
         types: [python]
-        exclude: (^|/)(tests|vulture_whitelist\.py)
+        exclude: (^|/)tests/
