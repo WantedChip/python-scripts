@@ -24,6 +24,11 @@ Full index of every script in this repo, organized by category.
 | [joke-fetcher](api-wrappers/joke-fetcher/) | Retrieves programming or general jokes from JokeAPI with category filters and safe mode. |
 | [nasa-apod-fetcher](api-wrappers/nasa-apod-fetcher/) | Downloads NASA Astronomy Picture of the Day images and exports metadata descriptions to Markdown notes. |
 | [pokemon-info-fetcher](api-wrappers/pokemon-info-fetcher/) | Looks up Pokémon stats, abilities, types, sprite URLs, and evolution chains from PokéAPI. |
+| [public-holiday-fetcher](api-wrappers/public-holiday-fetcher/) | Fetches national/public holidays for any country and year using Nager.Date API. |
+| [random-quote-fetcher](api-wrappers/random-quote-fetcher/) | Fetches random inspirational, tech, or famous quotes from Quotable API with fallback engine. |
+| [random-user-generator](api-wrappers/random-user-generator/) | Generates realistic mock user profiles (name, email, address, picture) from RandomUser.me API. |
+| [university-search-fetcher](api-wrappers/university-search-fetcher/) | Searches universities worldwide by country or name using HipoLabs University Domains API. |
+| [zipcode-info-fetcher](api-wrappers/zipcode-info-fetcher/) | Retrieves location metadata (city, state, coordinates) for postal codes via Zippopotam.us API. |
 
 ---
 
@@ -31,8 +36,13 @@ Full index of every script in this repo, organized by category.
 
 | Script | Description |
 |---|---|
+| [backup-rotation-manager](automation/backup-rotation-manager/) | Enforces backup retention policies (daily/weekly/monthly rotations) and cleans up expired backups. |
+| [cpu-load-monitor](automation/cpu-load-monitor/) | Records CPU load averages and per-core utilization at intervals, generating a summary report. |
 | [device-monitor](automation/device-monitor/) | Tracks local network host joins and leaves via ping sweeps and cross-platform ARP table parsing. |
+| [directory-watcher](automation/directory-watcher/) | Real-time filesystem event monitor watching file creations, modifications, and deletions. |
+| [disk-usage-monitor](automation/disk-usage-monitor/) | Monitors disk space usage across mounts and triggers warning alerts/logs when free space drops. |
 | [download-intent](automation/download-intent/) | Organize downloads based on filename context keywords, with confidence scores and SQLite transaction undo. |
+| [downloads-folder-organizer](automation/downloads-folder-organizer/) | Categorizes loose files in downloads folder by file extensions, MIME types, and date modified. |
 | [downloads-organizer](automation/downloads-organizer/) | Watches/scans a folder and sorts files into subfolders by extension, filename, date, or custom rules. |
 | [smart-backup](automation/smart-backup/) | Incremental backups with checksums, exclusions, retention policies, verification, and dry-run mode. |
 | [website-monitor](automation/website-monitor/) | Watches specific webpage sections via CSS selectors and sends alerts on meaningful content updates. |
