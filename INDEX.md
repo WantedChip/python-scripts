@@ -6,6 +6,7 @@ Full index of every script in this repo, organized by category.
 - [api-wrappers](#api-wrappers)
 - [automation](#automation)
 - [checkers](#checkers)
+- [converters](#converters)
 - [tools](#tools)
 
 ---
@@ -106,14 +107,31 @@ Full index of every script in this repo, organized by category.
 | [repository-documentation-auditor](checkers/repository-documentation-auditor/) | Detect missing setup instructions, dead commands, undocumented environment variables, and stale README references. |
 | [scheduled-task-auditor](checkers/scheduled-task-auditor/) | Unified view of cron, systemd timers, Windows Task Scheduler, and startup scripts, with detection of broken commands and missing paths. |
 | [schema-drift](checkers/schema-drift/) | Compare batches of JSON/API responses over time and show fields that appeared, disappeared, changed type, or became unexpectedly nullable. |
+| [secret-deleted-or-not](checkers/secret-deleted-or-not/) | Analyzes git commit history to determine whether a sensitive pattern was completely deleted or remains in earlier commits. |
 | [secret-history-check](checkers/secret-history-check/) | Check whether a secret was merely deleted from the current file or still exists in Git history. |
 | [secret-leak-scanner](checkers/secret-leak-scanner/) | Detect sensitive API keys, credentials, database connection strings, and private SSH keys in local files or git staged commits, providing remediation steps. |
+| [service-status-checker](checkers/service-status-checker/) | Inspects local system services and process states across systemd and psutil with tabular or JSON status reporting. |
 | [setup-diff](checkers/setup-diff/) | Compare two developer machines and explain why the project works on A but fails on B: runtime versions, binaries, environment-variable presence, PATH, permissions, package versions, ports, and config. |
 | [sqlite-inspector](checkers/sqlite-inspector/) | Audit SQLite databases, summarizing tables, null patterns, duplicate rows, and schema issues. |
+| [ssl-certificate-expiry-checker](checkers/ssl-certificate-expiry-checker/) | Checks SSL/TLS certificate expiration dates for target domains and alerts if expiry falls within a specified threshold. |
 | [stash-conflict-preview](checkers/stash-conflict-preview/) | Before git stash apply, estimate which files and hunks are likely to conflict. |
 | [test-gap](checkers/test-gap/) | Compare changed code with executed tests and report important changed paths that were never exercised. |
+| [time-sync-auditor](checkers/time-sync-auditor/) | Audits NTP and chrony synchronization health across multi-host Linux environments or parses time sync CLI logs. |
 | [workflow-lint-plus](checkers/workflow-lint-plus/) | Find duplicate jobs, unpinned actions, impossible conditions, unnecessary matrix combinations, missing timeouts, and cache mistakes. |
 | [works-on-my-machine](checkers/works-on-my-machine/) | Inspect a Python project and generate a reproducibility report covering Python version, OS assumptions, environment variables, external binaries, ports, package versions, and undeclared system dependencies. |
+
+---
+
+## converters
+
+| Script | Description |
+|---|---|
+| [csv-column-reorder](converters/csv-column-reorder/) | Reorders, selects, or drops columns in CSV files based on a specified header sequence or JSON configuration file. |
+| [currency-normalizer](converters/currency-normalizer/) | Normalizes mixed currency strings into standardized decimal float numbers and ISO 4217 currency codes. |
+| [date-format-standardizer](converters/date-format-standardizer/) | Detects inconsistent date/time strings in CSV columns and standardizes them to ISO 8601 (YYYY-MM-DD). |
+| [json-flatten-nested](converters/json-flatten-nested/) | Flattens deeply nested JSON structures and arrays into a single-level flat dictionary format and supports CSV export. |
+| [json-to-csv-converter](converters/json-to-csv-converter/) | Converts JSON object arrays or JSON lines (JSONL) files into CSV format with automatic column header collection. |
+| [markdown-to-html-converter](converters/markdown-to-html-converter/) | Converts Markdown documents into standalone HTML pages with basic syntax support and CSS styling templates. |
 
 ---
 
