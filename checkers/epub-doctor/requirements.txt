@@ -1,0 +1,2 @@
+# No external dependencies required.
+# Standard library: zipfile, xml.etree.ElementTree, html.parser, urllib.parse, argparse, json, pathlib
