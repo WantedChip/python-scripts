@@ -3,9 +3,27 @@
 Full index of every script in this repo, organized by category.
 
 ## Table of Contents
+- [api-wrappers](#api-wrappers)
 - [automation](#automation)
 - [checkers](#checkers)
 - [tools](#tools)
+
+---
+
+## api-wrappers
+
+| Script | Description |
+|---|---|
+| [bitcoin-price-fetcher](api-wrappers/bitcoin-price-fetcher/) | Retrieves current Bitcoin/crypto price, market cap, and 24h change from CoinGecko API with fallback support. |
+| [cat-fact-fetcher](api-wrappers/cat-fact-fetcher/) | Fetches random cat facts from Cat Facts API and accumulates them into a local collection file with deduplication. |
+| [cocktail-recipe-fetcher](api-wrappers/cocktail-recipe-fetcher/) | Searches cocktail recipes by name or ingredient using TheCocktailDB API and formats recipe cards. |
+| [country-info-fetcher](api-wrappers/country-info-fetcher/) | Retrieves country data (capital, population, region, flag URL, currency, languages) from REST Countries API. |
+| [exchange-rate-fetcher](api-wrappers/exchange-rate-fetcher/) | Fetches real-time and historical exchange rates between currencies from a free API. |
+| [github-user-info-fetcher](api-wrappers/github-user-info-fetcher/) | Fetches GitHub user profile metrics, public repo count, top language breakdown, and total stars. |
+| [ip-geolocation-lookup](api-wrappers/ip-geolocation-lookup/) | Geolocation lookup for IP addresses (country, city, ISP, lat/lon, timezone) via free IP APIs. |
+| [joke-fetcher](api-wrappers/joke-fetcher/) | Retrieves programming or general jokes from JokeAPI with category filters and safe mode. |
+| [nasa-apod-fetcher](api-wrappers/nasa-apod-fetcher/) | Downloads NASA Astronomy Picture of the Day images and exports metadata descriptions to Markdown notes. |
+| [pokemon-info-fetcher](api-wrappers/pokemon-info-fetcher/) | Looks up Pokémon stats, abilities, types, sprite URLs, and evolution chains from PokéAPI. |
 
 ---
 
