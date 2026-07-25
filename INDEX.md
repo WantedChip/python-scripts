@@ -82,13 +82,23 @@ Full index of every script in this repo, organized by category.
 | [example-drift-checker](checkers/example-drift-checker/) | Detect when code examples in docs no longer match the current API. |
 | [expiry-monitor](checkers/expiry-monitor/) | Evaluates domain WHOIS registration and SSL certificate validity days remaining. |
 | [file-share-audit](checkers/file-share-audit/) | Audits directory trees before sharing/uploading to flag API keys, credentials, EXIF GPS data, and path usernames. |
+| [folder-permission-reporter](checkers/folder-permission-reporter/) | Recursively scans folders for insecure, overly permissive (777, world-writable), or irregular file permissions. |
+| [generated-file-check](checkers/generated-file-check/) | Identifies committed generated build artifacts, minified assets, auto-generated code, and lock files. |
 | [gitignore-explain](checkers/gitignore-explain/) | Explain exactly which rule ignored a file, where that rule came from, and how to fix it. |
+| [hotfix-debt](checkers/hotfix-debt/) | Scans repository codebase for temporary hotfix tags, inline workarounds, emergency patches, and overdue tech debt markers. |
+| [intent-expiry](checkers/intent-expiry/) | Scans codebase for temporary developer annotations, TODOs, and fixmes with expiration target dates or version triggers. |
 | [json-shape](checkers/json-shape/) | Feed thousands of JSON records and get a report of common fields, types, anomalies, and schema drift. |
+| [json-shape-diff](checkers/json-shape-diff/) | Compare structure and data shapes of two JSON files/APIs to highlight added, removed, or type-shifted schema fields. |
 | [license-reality-check](checkers/license-reality-check/) | Scan dependencies and identify license compatibility problems before a project is distributed. |
 | [link-checker](checkers/link-checker/) | Crawls a website or scans local Markdown/HTML files and reports dead links, redirects, and timeouts. |
+| [machine-bootstrap-audit](checkers/machine-bootstrap-audit/) | Audits machine bootstrap and setup scripts (shell & Python) statically for hidden interactive prompts, un-checked binaries, and hardcoded paths. |
 | [orphan-config](checkers/orphan-config/) | Find config files and application-data folders probably left behind by software that is no longer installed. |
+| [outlier-detector-csv](checkers/outlier-detector-csv/) | Flags statistical outliers in numeric CSV columns using IQR (Interquartile Range) or Z-score detection methods. |
+| [output-drift](checkers/output-drift/) | Validates Markdown documentation code block outputs against actual execution results and highlights drifted snippets. |
 | [pip-why](checkers/pip-why/) | Audits why Python packages are installed, who depends on them, and version conflicts. |
 | [permission-explainer](checkers/permission-explainer/) | Explain Unix/Windows file-permission problems in normal language and suggest the smallest safe fix. |
+| [plagiarism-detector](checkers/plagiarism-detector/) | Compares two text documents and reports similarity metrics using N-gram containment and TF-IDF / term frequency cosine distance. |
+| [port-availability-checker](checkers/port-availability-checker/) | Scans single ports or port ranges across TCP/UDP protocols for local or remote hosts with custom timeout configuration and structured tabular/JSON reporting. |
 | [privacy-report](checkers/privacy-report/) | Scan a folder before sharing or uploading it and flag EXIF GPS data, usernames in paths, email addresses, API keys, hidden files, and document metadata. |
 | [readme-command-tester](checkers/readme-command-tester/) | Extract shell commands from a README and test whether the documented setup actually works in a clean environment. |
 | [readme-doctor](checkers/readme-doctor/) | Extract commands from a README, execute them in an isolated virtual environment, and report which instructions are stale. |
