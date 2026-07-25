@@ -1,0 +1,2 @@
+# Python standard library dependencies only
+# Python 3.8+
