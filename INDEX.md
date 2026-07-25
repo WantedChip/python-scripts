@@ -44,6 +44,8 @@ Full index of every script in this repo, organized by category.
 | [download-intent](automation/download-intent/) | Organize downloads based on filename context keywords, with confidence scores and SQLite transaction undo. |
 | [downloads-folder-organizer](automation/downloads-folder-organizer/) | Categorizes loose files in downloads folder by file extensions, MIME types, and date modified. |
 | [downloads-organizer](automation/downloads-organizer/) | Watches/scans a folder and sorts files into subfolders by extension, filename, date, or custom rules. |
+| [empty-folder-cleaner](automation/empty-folder-cleaner/) | Recursively identifies and removes empty directories with dry-run mode, path exclusion, and logging support. |
+| [memory-usage-monitor](automation/memory-usage-monitor/) | Monitors RAM and swap space utilization, logs usage trends, and sends threshold alerts. |
 | [smart-backup](automation/smart-backup/) | Incremental backups with checksums, exclusions, retention policies, verification, and dry-run mode. |
 | [website-monitor](automation/website-monitor/) | Watches specific webpage sections via CSS selectors and sends alerts on meaningful content updates. |
 
@@ -56,22 +58,30 @@ Full index of every script in this repo, organized by category.
 | [ai-code-sanitizer](checkers/ai-code-sanitizer/) | Scan code likely generated or heavily modified by AI and flag fake imports, nonexistent package APIs, duplicate helpers, placeholder comments, swallowed exceptions, unnecessary abstractions, and tests that don't really test anything. |
 | [api-contract-diff](checkers/api-contract-diff/) | Compare two API versions (OpenAPI/Swagger) and report client-breaking changes. |
 | [api-monitor](checkers/api-monitor/) | Periodically tests HTTP endpoints for status codes, latency thresholds, JSON schemas, and SSL expiry. |
+| [assumption-hunter](checkers/assumption-hunter/) | AST analyzer that flags unvalidated assumptions (unhandled Nones, unverified dict keys, raw indexing, unchecked status codes). |
 | [command-doctor](checkers/command-doctor/) | Diagnose failed command executions using a diagnostic rules engine. |
 | [cleanup-simulator](checkers/cleanup-simulator/) | Let cleanup scripts describe exactly what they would delete and how much space they would recover before doing anything. |
 | [config-archaeologist](checkers/config-archaeologist/) | Find old configuration files left behind by uninstalled software and explain why they are probably stale. |
 | [config-validator](checkers/config-validator/) | Validates JSON/YAML configurations against schemas and generates compiler-like human-readable error messages. |
+| [copy-drift](checkers/copy-drift/) | Structural code similarity checker detecting copy-pasted Python logic across modules using tokenized Jaccard similarity. |
+| [cron-doctor](checkers/cron-doctor/) | Diagnostic engine auditing cron schedules for syntax errors, missing binary paths, overlapping jobs, and permission issues. |
 | [cron-health-checker](checkers/cron-health-checker/) | Detect failed, missing, overlapping, or silently broken scheduled jobs. |
+| [cron-job-validator](checkers/cron-job-validator/) | Validates 5-field cron syntax expressions, computes future execution schedules, and detects schedule overlap conflicts. |
 | [csv-autopsy](checkers/csv-autopsy/) | Explain why a CSV file is broken: encodings, quoting, column counts, control characters, dates, and numbers. |
+| [csv-forensics](checkers/csv-forensics/) | Deep forensic audit tool for CSV file integrity, encoding defects, control characters, broken quoting, and Excel corruption. |
 | [dead-code-confidence](checkers/dead-code-confidence/) | Find functions, modules, CLI flags, and config options that appear unused, but provide evidence and confidence rather than deleting anything. |
 | [dep-reporter](checkers/dep-reporter/) | Scan projects for outdated packages, breaking-version risks, and changelog links. |
 | [dependency-risk-report](checkers/dependency-risk-report/) | Assess update risks in requirement configurations, checking SemVer version gaps, Python version compatibilities, and vulnerabilities. |
 | [developer-machine-doctor](checkers/developer-machine-doctor/) | Diagnose PATH issues, Python environments, missing dependencies, port conflicts, disk problems, and permissions. |
 | [docs-drift](checkers/docs-drift/) | Find references in docs to files, commands, config keys, API names, and versions that no longer exist. |
+| [email-validator-cleaner](checkers/email-validator-cleaner/) | Validates and cleans email addresses in CSV files with syntax regex, disposable domain detection, and DNS checks. |
 | [env-auditor](checkers/env-auditor/) | Compares `.env`, `.env.example`, Docker files, and source code to find missing or unused variables. |
 | [env-diff](checkers/env-diff/) | Compare local and target environments to debug execution mismatches. |
 | [env-requirements](checkers/env-requirements/) | Scan source, Docker files, CI, configs, and docs to identify required, undocumented, or stale env variables. |
+| [epub-doctor](checkers/epub-doctor/) | Diagnostic tool for EPUB archives checking XML syntax, broken internal links/anchors, missing metadata, and oversized images. |
 | [example-drift-checker](checkers/example-drift-checker/) | Detect when code examples in docs no longer match the current API. |
 | [expiry-monitor](checkers/expiry-monitor/) | Evaluates domain WHOIS registration and SSL certificate validity days remaining. |
+| [file-share-audit](checkers/file-share-audit/) | Audits directory trees before sharing/uploading to flag API keys, credentials, EXIF GPS data, and path usernames. |
 | [gitignore-explain](checkers/gitignore-explain/) | Explain exactly which rule ignored a file, where that rule came from, and how to fix it. |
 | [json-shape](checkers/json-shape/) | Feed thousands of JSON records and get a report of common fields, types, anomalies, and schema drift. |
 | [license-reality-check](checkers/license-reality-check/) | Scan dependencies and identify license compatibility problems before a project is distributed. |
