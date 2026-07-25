@@ -150,6 +150,14 @@ Full index of every script in this repo, organized by category.
 | [event-listing-scraper](scraping/event-listing-scraper/) | Parses event listings from JSON-LD schema, iCalendar (.ics), and HTML feeds, supporting filtering and export. |
 | [github-trending-scraper](scraping/github-trending-scraper/) | Fetches trending repositories on GitHub by programming language and timeframe, exporting to Markdown, JSON, or ASCII tables. |
 | [news-headline-scraper](scraping/news-headline-scraper/) | Scrapes top news headlines from RSS/Atom feeds or web pages with keyword filtering and Markdown/JSON export. |
+| [podcast-episode-scraper](scraping/podcast-episode-scraper/) | Scrapes podcast RSS feeds, parses episode metadata, and downloads MP3 audio files. |
+| [product-review-scraper](scraping/product-review-scraper/) | Scrapes e-commerce product reviews from HTML/JSON, calculating rating distributions and sentiment metrics. |
+| [quote-of-the-day-scraper](scraping/quote-of-the-day-scraper/) | Scrapes daily motivational quotes from web sources or API fallback into JSON or formatted cards. |
+| [real-estate-listing-scraper](scraping/real-estate-listing-scraper/) | Scrapes property real estate listings, parsing price, bedrooms, bathrooms, address, and specs into CSV/JSON. |
+| [recipe-scraper](scraping/recipe-scraper/) | Scrapes recipe web pages or Schema.org JSON-LD to extract title, prep time, ingredients, and instructions. |
+| [stock-price-scraper](scraping/stock-price-scraper/) | Fetches current stock quotes, calculates price changes, and appends historical data to a CSV log. |
+| [weather-scraper](scraping/weather-scraper/) | Fetches current weather reports and forecasts for cities or coordinates via public APIs. |
+| [whois-domain-scraper](scraping/whois-domain-scraper/) | Performs WHOIS/RDAP domain lookups, parsing registrar info, expiration dates, and days until expiry. |
 
 ---
 
@@ -157,8 +165,10 @@ Full index of every script in this repo, organized by category.
 
 | Script | Description |
 |---|---|
+| [agent-boundary](tools/agent-boundary/) | Maintains a hunk-level provenance ledger for human vs AI coding agent edits to report contributions and scope violations. |
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
 | [archive-before-delete](tools/archive-before-delete/) | Wrap dangerous deletion commands by creating a recoverable manifest or quarantine first. |
+| [artifact-recipe](tools/artifact-recipe/) | Records build provenance for generated files into sidecar recipes and explains artifact staleness. |
 | [branch-graveyard](tools/branch-graveyard/) | Find local and remote branches that are merged, abandoned, duplicated, or attached to closed PRs, with a safe interactive cleanup mode. |
 | [branch-memory](tools/branch-memory/) | For every branch, generate a compact summary of what was being accomplished there from commits, dirty changes, TODOs, and issues. |
 | [changelog-from-reality](tools/changelog-from-reality/) | Compare releases or tags and generate a factual changelog from actual code changes rather than relying only on commit-message quality. |
