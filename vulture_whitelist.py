@@ -75,3 +75,4 @@ _.from_markdown
 _.ITALIC
 _.UNDERLINE
 _.get_active_session
+_.calculate_total_stars
