@@ -7,6 +7,7 @@ Full index of every script in this repo, organized by category.
 - [automation](#automation)
 - [checkers](#checkers)
 - [converters](#converters)
+- [scraping](#scraping)
 - [tools](#tools)
 
 ---
@@ -132,6 +133,23 @@ Full index of every script in this repo, organized by category.
 | [json-flatten-nested](converters/json-flatten-nested/) | Flattens deeply nested JSON structures and arrays into a single-level flat dictionary format and supports CSV export. |
 | [json-to-csv-converter](converters/json-to-csv-converter/) | Converts JSON object arrays or JSON lines (JSONL) files into CSV format with automatic column header collection. |
 | [markdown-to-html-converter](converters/markdown-to-html-converter/) | Converts Markdown documents into standalone HTML pages with basic syntax support and CSS styling templates. |
+| [null-value-filler](converters/null-value-filler/) | Fills missing or null values in CSV columns using strategies like constant value, forward fill, backward fill, mean, or median. |
+| [phone-number-formatter](converters/phone-number-formatter/) | Formats raw phone numbers into standardized international E.164, national, or custom formats using country codes. |
+| [text-case-converter](converters/text-case-converter/) | Converts text or file content between various casing styles (snake_case, camelCase, PascalCase, kebab-case, UPPERCASE, lowercase, Title Case, CONSTANT_CASE). |
+| [text-encoding-converter](converters/text-encoding-converter/) | Detects and converts text file character encodings (e.g. UTF-8, Latin-1, Windows-1252, ASCII) to target encodings with BOM and error handling. |
+
+---
+
+## scraping
+
+| Script | Description |
+|---|---|
+| [academic-paper-scraper](scraping/academic-paper-scraper/) | Searches arXiv for academic papers by keyword or category, extracts metadata, BibTeX citations, and optional PDF downloads. |
+| [book-info-scraper](scraping/book-info-scraper/) | Looks up book metadata (title, author, date, publisher, pages, subjects) by ISBN using the Open Library API. |
+| [documentation-scraper](scraping/documentation-scraper/) | Crawls documentation sites and builds a single consolidated offline HTML or Markdown reference with Table of Contents. |
+| [event-listing-scraper](scraping/event-listing-scraper/) | Parses event listings from JSON-LD schema, iCalendar (.ics), and HTML feeds, supporting filtering and export. |
+| [github-trending-scraper](scraping/github-trending-scraper/) | Fetches trending repositories on GitHub by programming language and timeframe, exporting to Markdown, JSON, or ASCII tables. |
+| [news-headline-scraper](scraping/news-headline-scraper/) | Scrapes top news headlines from RSS/Atom feeds or web pages with keyword filtering and Markdown/JSON export. |
 
 ---
 
