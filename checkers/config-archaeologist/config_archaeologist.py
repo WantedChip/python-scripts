@@ -272,7 +272,7 @@ def main() -> None:
         last_mod = cand["last_modified"]
         modified_str = (
             last_mod.strftime("%Y-%m-%d")
-            if isinstance(last_mod, datetime) and last_mod != datetime.min
+            if hasattr(last_mod, "strftime") and last_mod != datetime.min
             else "Never"
         )
         print(f"{idx}. Folder: {cand['folder_name']} (Source: {cand['root']})")
