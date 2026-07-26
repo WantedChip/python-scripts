@@ -1,0 +1,2 @@
+# Optional external library for image processing and EXIF parsing (Fallback pure-python reader included)
+Pillow>=9.0.0
