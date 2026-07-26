@@ -244,14 +244,24 @@ Full index of every script in this repo, organized by category.
 | [localhost-dashboard](tools/localhost-dashboard/) | Detect local dev servers and show them in one terminal UI: ports, projects, processes, uptime, and health. |
 | [localhost-who](tools/localhost-who/) | Show active development service ports, PID runtimes, working directories, launch commands, and HTTP health. |
 | [log-analyzer](tools/log-analyzer/) | Parses large log files line-by-line, masks variables to group error occurrences, and flags rate spikes. |
+| [log-file-analyzer](tools/log-file-analyzer/) | Analyzes log files for error patterns, HTTP status codes, response time metrics, and rate spikes with HTML/JSON reporting. |
 | [log-merge](tools/log-merge/) | Give it logs from multiple services, normalize timestamps, sort events into one timeline, collapse duplicate errors, and show context. |
-| [mock-from-traffic](tools/mock-from-traffic/) | Record application dev traffic, sanitize credentials and fields, and save local mock response files. |
 | [minimal-reproducer](tools/minimal-reproducer/) | Automatically shrink a failing JSON, CSV, or config file to find the smallest input reproducing a failure. |
+| [mock-from-traffic](tools/mock-from-traffic/) | Record application dev traffic, sanitize credentials and fields, and save local mock response files. |
+| [multi-host-state](tools/multi-host-state/) | Collects system metrics across multiple remote hosts via SSH or subprocesses with aggregate status reports. |
+| [mutation-witness](tools/mutation-witness/) | Executes mutation testing against Python test suites to measure test suite quality and coverage gap detection. |
+| [network-interface-reporter](tools/network-interface-reporter/) | Reports network interface configurations, active IP addresses, MAC addresses, and traffic statistics across platforms. |
+| [note-taker-cli](tools/note-taker-cli/) | CLI note taking and knowledge base manager with markdown export, tag filtering, full-text search, and JSON storage. |
+| [password-generator-cli](tools/password-generator-cli/) | Cryptographically secure password and passphrase generator CLI with entropy calculation and exclusion rules. |
 | [pdf-toolkit](tools/pdf-toolkit/) | Merge, split, rotate, extract, compress, and rename PDFs from one CLI. |
+| [photo-organizer-by-date](tools/photo-organizer-by-date/) | Organizes photo collections into date-based subfolder structures using EXIF metadata and file modification fallback. |
+| [pomodoro-timer-cli](tools/pomodoro-timer-cli/) | Terminal Pomodoro timer CLI with customizable work/break intervals, ASCII progress bar, and session history tracking. |
 | [port-conflict-doctor](tools/port-conflict-doctor/) | Diagnose 'address already in use' port conflicts, explaining process owners and recommending safe kills. |
 | [port-inspector](tools/port-inspector/) | Audits listening/active network ports, displays process owner metadata, and kills target processes safely. |
 | [port-story](tools/port-story/) | Trace process ancestry, cmdline, CWD, and heuristics (Docker, dev servers) of port owners. |
 | [process-family-tree](tools/process-family-tree/) | Show why a mystery background process exists by tracing its parent, launch command, working directory, network connections, and child processes. |
+| [process-killer-by-name](tools/process-killer-by-name/) | Finds and terminates running processes by name pattern or PID list safely with dry-run and confirmation prompts. |
+| [quick-calc-cli](tools/quick-calc-cli/) | AST-based mathematical expression calculator CLI with variable storage, math functions, and session history persistence. |
 | [project-bootstrapper](tools/project-bootstrapper/) | Generate custom Python structures with standard linters, pytest configurations, and GitHub CI workflow matrix. |
 | [project-resume](tools/project-resume/) | Enter an old project directory after six months and get: what it does, how to run it, last changes, unfinished TODOs, broken dependencies, and likely next steps. |
 | [random-name-generator](tools/random-name-generator/) | Generates randomized name suggestions for people, projects, and pets with optional alliteration. |
