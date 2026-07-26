@@ -1,0 +1,2 @@
+# Standard library dependencies only:
+# - os, sys, argparse, pathlib, hashlib, json, fnmatch, dataclasses, typing
