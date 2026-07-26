@@ -1,0 +1,2 @@
+# Standard library dependencies only
+# No external package requirements
