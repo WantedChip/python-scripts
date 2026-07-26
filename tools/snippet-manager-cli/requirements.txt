@@ -1,0 +1,2 @@
+# Standard library dependencies only
+# Optional: pyperclip (if installed) for enhanced system clipboard integration
