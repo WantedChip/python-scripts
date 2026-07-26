@@ -265,17 +265,27 @@ Full index of every script in this repo, organized by category.
 | [project-bootstrapper](tools/project-bootstrapper/) | Generate custom Python structures with standard linters, pytest configurations, and GitHub CI workflow matrix. |
 | [project-resume](tools/project-resume/) | Enter an old project directory after six months and get: what it does, how to run it, last changes, unfinished TODOs, broken dependencies, and likely next steps. |
 | [random-name-generator](tools/random-name-generator/) | Generates randomized name suggestions for people, projects, and pets with optional alliteration. |
+| [reading-time-estimator](tools/reading-time-estimator/) | Estimates reading time and word/character counts for text and documents across reading speeds. |
+| [receipt-normalizer](tools/receipt-normalizer/) | Take messy exported receipts or invoice PDFs and produce standardized local CSV/JSON records. |
+| [recent-files-collector](tools/recent-files-collector/) | Scans directories for recently created or modified files within a timeframe and copies them to an output bundle. |
+| [recipe-scaler-tool](tools/recipe-scaler-tool/) | Scales recipe ingredient quantities with metric/imperial conversion and fraction formatting. |
+| [recursive-archive-extractor](tools/recursive-archive-extractor/) | Recursively extracts nested archive files (ZIP, TAR, GZ, BZ2, XZ) into a clean output directory structure. |
 | [repo-bloat-timeline](tools/repo-bloat-timeline/) | Pinpoint when a Git repository grew in size, which commits caused size spikes, and top blob contributors. |
 | [repo-size-history](tools/repo-size-history/) | Show exactly when a repository became bloated and which commits/files caused the growth. |
-| [recipe-scaler-tool](tools/recipe-scaler-tool/) | Scales recipe ingredient quantities with metric/imperial conversion and fraction formatting. |
-| [receipt-normalizer](tools/receipt-normalizer/) | Take messy exported receipts or invoice PDFs and produce standardized local CSV/JSON records. |
 | [safe-undo](tools/safe-undo/) | A wrapper/library other Python scripts can use for destructive filesystem operations: writes a transaction manifest, then rollback reverses it. |
+| [sanitize-bundle](tools/sanitize-bundle/) | Redacts sensitive credentials, IP addresses, tokens, and PII from log files and diagnostic bundles. |
 | [screenshot-organizer](tools/screenshot-organizer/) | Sorts screenshots by date, OCR text content, app/window clues, and duplicate similarity. |
+| [screenshot-index](tools/screenshot-index/) | Indexes screenshot images into SQLite database with metadata, dimensions, color profiles, and optional OCR text. |
 | [screenshot-search](tools/screenshot-search/) | OCR a screenshot folder locally and let users search things like "error about Docker" or "receipt from June." |
+| [sentiment-analyzer-basic](tools/sentiment-analyzer-basic/) | Rule-based basic sentiment analysis CLI for text and documents using VADER-style lexicon scoring. |
+| [service-timeline](tools/service-timeline/) | Merges log files from multiple services into a unified chronological timeline for distributed debugging. |
 | [share-safe](tools/share-safe/) | Create sanitized copies of logs and project folders for bug reports, automatically replacing home-directory names, tokens, IPs, and selected identifiers. |
+| [smart-file-classifier](tools/smart-file-classifier/) | Classifies files into categorized folders based on MIME types, file extensions, and content inspection rules. |
+| [snippet-manager-cli](tools/snippet-manager-cli/) | Code snippet manager CLI with SQLite storage, language/tag filtering, search, and clipboard copying. |
 | [space-investigator](tools/space-investigator/) | Explains what consumes storage, detects unusually large folders, and exports a report. |
 | [stash-manager](tools/stash-manager/) | Git stash manager showing source branch, age, changed files, conflict risk, and safe preview before apply. |
 | [subtitle-fixer](tools/subtitle-fixer/) | Shift timing, repair encoding, remove duplicates, and convert subtitle formats (SRT/VTT/ASS). |
+| [swallow-trace](tools/swallow-trace/) | Traces Python execution using sys.settrace to detect swallowed/suppressed exceptions and track downstream impacts. |
 | [system-change-tracker](tools/system-change-tracker/) | Snapshot and diff system state (directories, environment variables, Python/OS packages, services) to audit what was modified during an installation. |
 | [test-order-hunter](tools/test-order-hunter/) | Randomize test execution order repeatedly to detect order-dependent flaky tests and culprit state polluters. |
 | [travel-itinerary-planner](tools/travel-itinerary-planner/) | Builds customized day-by-day travel itineraries based on budget, style, and pace constraints. |
