@@ -287,11 +287,21 @@ Full index of every script in this repo, organized by category.
 | [subtitle-fixer](tools/subtitle-fixer/) | Shift timing, repair encoding, remove duplicates, and convert subtitle formats (SRT/VTT/ASS). |
 | [swallow-trace](tools/swallow-trace/) | Traces Python execution using sys.settrace to detect swallowed/suppressed exceptions and track downstream impacts. |
 | [system-change-tracker](tools/system-change-tracker/) | Snapshot and diff system state (directories, environment variables, Python/OS packages, services) to audit what was modified during an installation. |
+| [system-info-display-cli](tools/system-info-display-cli/) | CLI system information dashboard displaying CPU, memory, disk, network, and OS details in formatted tables. |
+| [system-uptime-reporter](tools/system-uptime-reporter/) | Reports system boot time, uptime duration, idle percentage, and uptime history statistics across platforms. |
+| [task-time-tracker-cli](tools/task-time-tracker-cli/) | CLI task time tracker for logging activity sessions, project time summaries, and exporting reports. |
+| [terminal-presentation](tools/terminal-presentation/) | Renders Markdown files as ANSI terminal slides with syntax highlighting, live code execution, and keyboard navigation. |
 | [test-order-hunter](tools/test-order-hunter/) | Randomize test execution order repeatedly to detect order-dependent flaky tests and culprit state polluters. |
+| [text-diff-tool](tools/text-diff-tool/) | Compares two text files line-by-line and generates unified or side-by-side diff reports with change summary metrics. |
+| [text-summarizer-extractive](tools/text-summarizer-extractive/) | Generates extractive summaries by scoring and selecting the most important sentences based on word frequency. |
 | [travel-itinerary-planner](tools/travel-itinerary-planner/) | Builds customized day-by-day travel itineraries based on budget, style, and pace constraints. |
+| [typing-speed-test-cli](tools/typing-speed-test-cli/) | Measures typing speed (WPM) and accuracy score over randomized or selected passages. |
 | [universal-export-converter](tools/universal-export-converter/) | Normalize exports from different services into clean JSON/CSV with a plugin architecture. |
+| [video-slide-extractor](tools/video-slide-extractor/) | Detects slide changes in presentation or lecture videos using image difference and perceptual hash calculations. |
 | [webhook-debugger](tools/webhook-debugger/) | Receive webhooks locally, inspect headers/payloads, replay requests, and compare deliveries. |
 | [webhook-lab](tools/webhook-lab/) | Local webhook receiver with request history, payload diffing, replay, signature verification, and secret redaction. |
+| [whitespace-cleaner](tools/whitespace-cleaner/) | Trims leading, trailing, and excessive internal whitespace from text or CSV/TSV cells with in-place support. |
 | [why-is-this-file-here](tools/why-is-this-file-here/) | Given any project file, explain when it appeared, which commit introduced it, who references it, whether it is generated, whether it is ignored, and whether it appears safe to remove. |
+| [word-frequency-counter](tools/word-frequency-counter/) | Tokenizes text files, filters stop words, and outputs sorted word frequency rankings in console table, JSON, or CSV format. |
 | [workout-plan-generator](tools/workout-plan-generator/) | Generates personalized weekly workout programs tailored to fitness goals, skill level, and equipment. |
 | [worktree-manager](tools/worktree-manager/) | Git worktree manager: create worktrees, check disk usage, detect abandoned checkouts, and clean metadata safely. |
