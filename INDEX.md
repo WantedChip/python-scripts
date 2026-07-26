@@ -200,15 +200,25 @@ Full index of every script in this repo, organized by category.
 | [data-type-inferencer](tools/data-type-inferencer/) | Analyzes CSV columns, infers actual data types (integer, float, boolean, datetime, json, enum, string), calculates null ratios, and exports schemas. |
 | [dependency-change-impact](tools/dependency-change-impact/) | Scan project codebase using Python AST before upgrading a dependency to locate affected imports and breaking API call sites. |
 | [dependency-why](tools/dependency-why/) | Display dependency chains, project components importing a package, and consequences of removing it. |
+| [dictionary-lookup-cli](tools/dictionary-lookup-cli/) | CLI dictionary lookup tool that queries word definitions, pronunciations, synonyms, and antonyms from public APIs with caching. |
+| [directory-compare-tool](tools/directory-compare-tool/) | Compares two directory trees recursively, highlighting missing files, modified contents, size differences, and checksum mismatches. |
+| [dirty-generator](tools/dirty-generator/) | Generates deterministic dirty working tree states (modified files, untracked files, staged changes) for testing developer tooling. |
 | [diff-story](tools/diff-story/) | Turn a large Git diff patch into a structured narrative: behavioral edits, refactors, dependencies, and risk flags. |
 | [document-deduper](tools/document-deduper/) | Detect near-duplicate PDFs and documents even when filenames and metadata differ. |
+| [duplicate-contact-merger](tools/duplicate-contact-merger/) | Identifies and merges duplicate contacts in CSV/VCF files using fuzzy string matching on names, emails, and phone numbers. |
+| [duplicate-file-finder](tools/duplicate-file-finder/) | Finds duplicate files across directories using multi-stage size and SHA-256 hash comparison with quarantine/deletion actions. |
 | [duplicate-finder](tools/duplicate-finder/) | Scans directories for duplicate files by content hash and optionally moves them to quarantine. |
+| [environment-variable-exporter](tools/environment-variable-exporter/) | Filters and exports OS environment variables into a clean, sanitized .env file with secret masking. |
 | [error-bundler](tools/error-bundler/) | Bundle command outputs, tracebacks, environment context, and logs into a sanitized ZIP. |
+| [example-runner](tools/example-runner/) | Extracts code snippets (Python, Bash) from Markdown documentation and executes them safely in isolated temporary environments. |
 | [expense-parser](tools/expense-parser/) | Parse messy bank-export CSVs into normalized categories and monthly spending summaries. |
 | [failure-pack](tools/failure-pack/) | Run a failing command and create a sanitized diagnostic bundle containing stdout, stderr, exit code, OS, package versions, env keys, config, and logs. |
+| [file-extension-changer](tools/file-extension-changer/) | Safely changes file extensions in bulk with magic number header content validation to repair mislabeled files. |
 | [file-origin](tools/file-origin/) | Track where a downloaded file originated using Zone.Identifier and local browser history download searches. |
 | [file-quarantine-cleaner](tools/file-quarantine-cleaner/) | Identify old installers, archives, cache files, and abandoned downloads, but require confirmation before deletion. |
 | [file-renamer](tools/file-renamer/) | Bulk rename with regex, numbering, date cleanup, preview mode, and full undo/rollback support. |
+| [file-size-visualizer](tools/file-size-visualizer/) | Recursively visualizes directory disk usage using interactive ASCII trees and top-N heaviest file/folder treemaps. |
+| [filename-case-normalizer](tools/filename-case-normalizer/) | Bulk converts filenames to lowercase, uppercase, title case, or snake_case with collision prevention and undo manifests. |
 | [fixture-shrinker](tools/fixture-shrinker/) | Reduce a giant JSON, CSV, or text file to the smallest input that still reproduces a bug. |
 | [flaky-test-hunter](tools/flaky-test-hunter/) | Run tests repeatedly with randomized ordering/timing to rank flaky tests. |
 | [folder-snapshot](tools/folder-snapshot/) | Records a directory's state as a JSON snapshot and diffs two snapshots to show changes. |
