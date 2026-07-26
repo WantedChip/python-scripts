@@ -169,25 +169,35 @@ Full index of every script in this repo, organized by category.
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
 | [archive-before-delete](tools/archive-before-delete/) | Wrap dangerous deletion commands by creating a recoverable manifest or quarantine first. |
 | [artifact-recipe](tools/artifact-recipe/) | Records build provenance for generated files into sidecar recipes and explains artifact staleness. |
+| [ascii-table-generator-cli](tools/ascii-table-generator-cli/) | Generates customizable ASCII, Unicode, Markdown, and TSV tables from JSON/CSV inputs with auto-wrapping. |
+| [bookmark-manager-cli](tools/bookmark-manager-cli/) | URL bookmark manager CLI with CRUD operations, tag filtering, search, dead link validation, and browser opening. |
 | [branch-graveyard](tools/branch-graveyard/) | Find local and remote branches that are merged, abandoned, duplicated, or attached to closed PRs, with a safe interactive cleanup mode. |
 | [branch-memory](tools/branch-memory/) | For every branch, generate a compact summary of what was being accomplished there from commits, dirty changes, TODOs, and issues. |
+| [bug-report-builder](tools/bug-report-builder/) | Captures output from failing commands or log files, sanitizes sensitive secrets, and compiles Markdown/JSON bug reports. |
+| [bulk-file-renamer](tools/bulk-file-renamer/) | Bulk file renamer CLI with regex pattern matching, case formatting, sequential numbering, collision checks, and undo manifest support. |
 | [changelog-from-reality](tools/changelog-from-reality/) | Compare releases or tags and generate a factual changelog from actual code changes rather than relying only on commit-message quality. |
 | [ci-failure-deduper](tools/ci-failure-deduper/) | Group multiple CI log failures by root cause instead of making developers inspect jobs separately. |
 | [ci-local](tools/ci-local/) | Translate a GHA CI workflow to local reproduction command lines. |
 | [ci-log-deduper](tools/ci-log-deduper/) | Parse multiple failed CI logs, collapse dynamic tokens, and group them into root failure signatures. |
 | [cli-workflow-recorder](tools/cli-workflow-recorder/) | Record a sequence of terminal tasks and turn it into a reusable, parameterized workflow. |
+| [clipboard-history-tool](tools/clipboard-history-tool/) | Clipboard history manager with automatic secret redaction, tag search, SQLite persistence, and JSON/TXT export. |
 | [command-replay](tools/command-replay/) | Record a terminal workflow, replace changing values with parameters, and turn it into a reusable, inspectable script. |
 | [commit-splitter](tools/commit-splitter/) | Analyze a messy working tree and suggest logical groups of files or hunks that should become separate commits. |
 | [commit-surgeon](tools/commit-surgeon/) | Take a messy working tree and suggest logical commit groups by file dependency and diff relationship. |
+| [config-experiment](tools/config-experiment/) | Executes commands across multiple configuration variations, capturing stdout/stderr/exit codes and reporting matrix diffs. |
 | [config-map](tools/config-map/) | Scan a project and compile a resolution map of CLI, Env, and local settings configurations. |
 | [config-migration-tool](tools/config-migration-tool/) | Convert old configuration schemas to new versions with automatic backups and migration reports. |
 | [context-switch](tools/context-switch/) | Save your complete development context before switching tasks: current branch, dirty changes, running dev servers, open ports, recent commands, notes, and TODOs. |
+| [countdown-timer-cli](tools/countdown-timer-cli/) | CLI countdown timer with human-readable duration parsing, ASCII progress bar animation, presets, and terminal bell alerts. |
 | [csv-cleaner](tools/csv-cleaner/) | Detects encoding, delimiter, duplicates, malformed dates, empty columns, and type problems in CSVs. |
+| [csv-deduplicate-rows](tools/csv-deduplicate-rows/) | Deduplicates CSV rows based on key columns, supporting first/last retention strategies, case-insensitivity, and fuzzy matching. |
+| [csv-merge-tool](tools/csv-merge-tool/) | Merges multiple CSV files with matching or overlapping headers, supporting missing column defaults, source tagging, and deduplication. |
 | [curl-to-test](tools/curl-to-test/) | Convert cURL commands into requests snippets, pytest tests, mock fixtures, and markdown docs. |
 | [data-diff-human](tools/data-diff-human/) | Compare CSV/JSON records and summarize changes in a clean, human-friendly format. |
 | [data-export-searcher](tools/data-export-searcher/) | Search archives from chat apps, email, or social platforms locally with advanced query filters. |
 | [data-peek](tools/data-peek/) | One command to inspect CSV, TSV, JSON, JSONL, Parquet, SQLite, and Excel: schema, row count, nulls, sample values, suspicious columns, and basic stats. |
 | [data-pipeline-diff](tools/data-pipeline-diff/) | Compare two CSV, JSON, or database outputs and explain exactly what changed. |
+| [data-type-inferencer](tools/data-type-inferencer/) | Analyzes CSV columns, infers actual data types (integer, float, boolean, datetime, json, enum, string), calculates null ratios, and exports schemas. |
 | [dependency-change-impact](tools/dependency-change-impact/) | Scan project codebase using Python AST before upgrading a dependency to locate affected imports and breaking API call sites. |
 | [dependency-why](tools/dependency-why/) | Display dependency chains, project components importing a package, and consequences of removing it. |
 | [diff-story](tools/diff-story/) | Turn a large Git diff patch into a structured narrative: behavioral edits, refactors, dependencies, and risk flags. |
