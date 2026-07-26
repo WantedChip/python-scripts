@@ -1,0 +1,2 @@
+# Standard library dependencies only:
+# - os, sys, argparse, pathlib, zipfile, tarfile, typing, logging, dataclasses
