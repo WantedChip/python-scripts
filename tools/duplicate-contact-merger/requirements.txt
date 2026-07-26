@@ -1,0 +1,2 @@
+# Standard library dependencies only.
+# Uses built-in difflib module for fuzzy string matching.
