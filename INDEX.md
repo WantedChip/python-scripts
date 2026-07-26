@@ -219,17 +219,27 @@ Full index of every script in this repo, organized by category.
 | [file-renamer](tools/file-renamer/) | Bulk rename with regex, numbering, date cleanup, preview mode, and full undo/rollback support. |
 | [file-size-visualizer](tools/file-size-visualizer/) | Recursively visualizes directory disk usage using interactive ASCII trees and top-N heaviest file/folder treemaps. |
 | [filename-case-normalizer](tools/filename-case-normalizer/) | Bulk converts filenames to lowercase, uppercase, title case, or snake_case with collision prevention and undo manifests. |
+| [filename-sanitizer](tools/filename-sanitizer/) | Sanitizes file and directory names by replacing spaces and illegal characters with clean separators. |
+| [find-and-replace-text](tools/find-and-replace-text/) | Finds and replaces text or regex patterns across files with dry-run support and match count statistics. |
+| [firewall-rule-generator](tools/firewall-rule-generator/) | Generates iptables or ufw shell scripts from YAML or JSON rule specifications. |
 | [fixture-shrinker](tools/fixture-shrinker/) | Reduce a giant JSON, CSV, or text file to the smallest input that still reproduces a bug. |
 | [flaky-test-hunter](tools/flaky-test-hunter/) | Run tests repeatedly with randomized ordering/timing to rank flaky tests. |
 | [folder-snapshot](tools/folder-snapshot/) | Records a directory's state as a JSON snapshot and diffs two snapshots to show changes. |
+| [folder-sync-tool](tools/folder-sync-tool/) | One-way and bidirectional folder synchronization with SHA256 checksums, deletion tracking, and conflict detection. |
 | [fresh-machine](tools/fresh-machine/) | Export your developer setup (packages, Git config, shell aliases, editor extensions, Python tools) and recreate it elsewhere. |
 | [gift-idea-generator](tools/gift-idea-generator/) | Suggests personalized gift ideas based on recipient age, budget, relationship, and interests. |
 | [git-cleanup](tools/git-cleanup/) | Finds large files, stale branches, ignored junk, and accidentally committed secrets in a git repo. |
 | [git-time-machine](tools/git-time-machine/) | Automate Git history investigations to find when config values changed, when dependencies were introduced, and when files grew beyond size limits. |
 | [git-undo-explain](tools/git-undo-explain/) | Explain the safest Git operation for mistakes, show the exact effect visually, then optionally execute it. |
+| [habit-tracker-cli](tools/habit-tracker-cli/) | Terminal Habit Tracker CLI for managing daily habits, check-ins, streak statistics, and ASCII calendars with SQLite storage. |
+| [hard-subtitle-extractor](tools/hard-subtitle-extractor/) | Extracts burned-in subtitles from video files using OCR, deduplicates timing, and exports SRT files. |
 | [history-analyzer](tools/history-analyzer/) | Analyze shell history locally to find frequent commands and suggest aliases. |
 | [image-optimizer](tools/image-optimizer/) | Recursively resize, compress, and convert images while preserving originals and metadata. |
+| [interactive-todo-cli](tools/interactive-todo-cli/) | Interactive TODO List Manager CLI tool with priority levels, tag management, ASCII table formatting, and SQLite storage. |
 | [issue-reproducer](tools/issue-reproducer/) | Unpack a bug ZIP bundle, recreate its virtual environment, and run the failed command to reproduce the issue. |
+| [json-formatter-cli](tools/json-formatter-cli/) | Pretty-print, minify, query (jq-style path keys), and validate JSON files from CLI. |
+| [keyword-extractor](tools/keyword-extractor/) | Extracts key terms and phrases from text documents using TF-IDF weighting or term frequency scoring with stop-word filtering. |
+| [large-file-finder](tools/large-file-finder/) | Scans directory trees for files exceeding specified size thresholds, providing sorted file reports and multi-format exports. |
 | [local-document-search](tools/local-document-search/) | Privacy-first full-text search for local files — index and search documents without uploading. |
 | [localhost-dashboard](tools/localhost-dashboard/) | Detect local dev servers and show them in one terminal UI: ports, projects, processes, uptime, and health. |
 | [localhost-who](tools/localhost-who/) | Show active development service ports, PID runtimes, working directories, launch commands, and HTTP health. |
