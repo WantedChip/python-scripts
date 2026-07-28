@@ -137,6 +137,7 @@ Full index of every script in this repo, organized by category.
 | [phone-number-formatter](converters/phone-number-formatter/) | Formats raw phone numbers into standardized international E.164, national, or custom formats using country codes. |
 | [text-case-converter](converters/text-case-converter/) | Converts text or file content between various casing styles (snake_case, camelCase, PascalCase, kebab-case, UPPERCASE, lowercase, Title Case, CONSTANT_CASE). |
 | [text-encoding-converter](converters/text-encoding-converter/) | Detects and converts text file character encodings (e.g. UTF-8, Latin-1, Windows-1252, ASCII) to target encodings with BOM and error handling. |
+| [text-normalizer](converters/text-normalizer/) | Normalizes text by expanding contractions, removing accents, unifying smart quotes, and standardizing whitespace. |
 
 ---
 
@@ -165,6 +166,7 @@ Full index of every script in this repo, organized by category.
 
 | Script | Description |
 |---|---|
+| [acronym-finder](tools/acronym-finder/) | Scans documents and lists acronyms with first-occurrence line numbers, context, and expanded definitions. |
 | [agent-boundary](tools/agent-boundary/) | Maintains a hunk-level provenance ledger for human vs AI coding agent edits to report contributions and scope violations. |
 | [api-response-recorder](tools/api-response-recorder/) | Save sanitized API responses and turn them into deterministic fixtures for tests. |
 | [archive-before-delete](tools/archive-before-delete/) | Wrap dangerous deletion commands by creating a recoverable manifest or quarantine first. |
@@ -208,6 +210,7 @@ Full index of every script in this repo, organized by category.
 | [duplicate-contact-merger](tools/duplicate-contact-merger/) | Identifies and merges duplicate contacts in CSV/VCF files using fuzzy string matching on names, emails, and phone numbers. |
 | [duplicate-file-finder](tools/duplicate-file-finder/) | Finds duplicate files across directories using multi-stage size and SHA-256 hash comparison with quarantine/deletion actions. |
 | [duplicate-finder](tools/duplicate-finder/) | Scans directories for duplicate files by content hash and optionally moves them to quarantine. |
+| [email-signature-parser](tools/email-signature-parser/) | Extracts contact information (names, titles, phone numbers, emails, websites) from email signature text blocks. |
 | [environment-variable-exporter](tools/environment-variable-exporter/) | Filters and exports OS environment variables into a clean, sanitized .env file with secret masking. |
 | [error-bundler](tools/error-bundler/) | Bundle command outputs, tracebacks, environment context, and logs into a sanitized ZIP. |
 | [example-runner](tools/example-runner/) | Extracts code snippets (Python, Bash) from Markdown documentation and executes them safely in isolated temporary environments. |
@@ -251,6 +254,7 @@ Full index of every script in this repo, organized by category.
 | [multi-host-state](tools/multi-host-state/) | Collects system metrics across multiple remote hosts via SSH or subprocesses with aggregate status reports. |
 | [mutation-witness](tools/mutation-witness/) | Executes mutation testing against Python test suites to measure test suite quality and coverage gap detection. |
 | [network-interface-reporter](tools/network-interface-reporter/) | Reports network interface configurations, active IP addresses, MAC addresses, and traffic statistics across platforms. |
+| [named-entity-highlighter](tools/named-entity-highlighter/) | Identifies and highlights names, dates, organizations, and locations in text using regex patterns. |
 | [note-taker-cli](tools/note-taker-cli/) | CLI note taking and knowledge base manager with markdown export, tag filtering, full-text search, and JSON storage. |
 | [password-generator-cli](tools/password-generator-cli/) | Cryptographically secure password and passphrase generator CLI with entropy calculation and exclusion rules. |
 | [pdf-toolkit](tools/pdf-toolkit/) | Merge, split, rotate, extract, compress, and rename PDFs from one CLI. |
