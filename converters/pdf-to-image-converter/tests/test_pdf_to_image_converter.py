@@ -50,9 +50,7 @@ def test_convert_pdf_to_images(tmp_path: Path) -> None:
     create_dummy_pdf(pdf_path, 2)
 
     out_dir = tmp_path / "img_out"
-    images = convert_pdf_to_images(
-        pdf_path, out_dir, img_format="png", range_str="1-2"
-    )
+    images = convert_pdf_to_images(pdf_path, out_dir, img_format="png", range_str="1-2")
     assert len(images) == 2
     for img in images:
         assert img.exists()

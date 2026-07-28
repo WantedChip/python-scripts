@@ -210,11 +210,7 @@ def main(args: Optional[List[str]] = None) -> int:
     success_cnt = 0
 
     for src in video_files:
-        rel = (
-            src.relative_to(input_path)
-            if input_path.is_dir()
-            else Path(src.name)
-        )
+        rel = src.relative_to(input_path) if input_path.is_dir() else Path(src.name)
         dst = out_dir / rel.parent / f"{rel.stem}{suf}{rel.suffix}"
 
         ok = convert_video_resolution(
