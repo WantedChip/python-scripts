@@ -167,7 +167,11 @@ class TestReportingPeriodsAndFilters(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         self.file_path = os.path.join(self.temp_dir, "time_tracker.json")
         self.mgr = TimeTrackerManager(self.file_path)
-        now = datetime.now()
+        # Anchor fixture timestamps to noon today so daily/weekly windows
+        # stay deterministic even when the suite runs shortly after midnight
+        # (a raw now - 2h start would land on yesterday and vanish from the
+        # daily report).
+        now = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
 
         today = TimeSession.from_dict(
             {
