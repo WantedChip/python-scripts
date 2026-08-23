@@ -188,8 +188,14 @@ class TestProcessDirectoryGuards(unittest.TestCase):
         )
 
         self.assertEqual(len(renames), 1)
+        self.assertEqual(renames[0][1].name, "report_final.doc")
         names = {p.name for p in self.temp_dir.iterdir()}
-        self.assertEqual(names, {"report_final.doc", "report-final.doc"})
+        # Directory iteration order differs across platforms, so either
+        # colliding source may be processed first; exactly one original
+        # must survive untouched while its twin becomes report_final.doc.
+        survivors = names - {"report_final.doc"}
+        self.assertEqual(len(survivors), 1)
+        self.assertIn(survivors.pop(), {"report final.doc", "report-final.doc"})
 
     def test_append_number_resolves_second_collision(self) -> None:
         """Two sources converging on one name produce _1 suffixing."""

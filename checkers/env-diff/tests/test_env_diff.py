@@ -38,10 +38,8 @@ def test_sanitize_env() -> None:
 def test_is_privileged() -> None:
     """Test administrative privilege identification functions."""
     # Test Windows check
-    with patch("sys.platform", "win32"), patch(
-        "ctypes.windll.shell32.IsUserAnAdmin", create=True
-    ) as mock_admin:
-        mock_admin.return_value = 1
+    with patch("sys.platform", "win32"), patch("env_diff.ctypes") as mock_ctypes:
+        mock_ctypes.windll.shell32.IsUserAnAdmin.return_value = 1
         assert is_privileged() is True
 
     # Test Unix check

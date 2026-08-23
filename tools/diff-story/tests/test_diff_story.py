@@ -1,12 +1,24 @@
+import gettext
 import os
 import subprocess
 import sys
 from unittest.mock import MagicMock, mock_open, patch
 
+import pytest
+
 # Add path to tools/diff-story to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from diff_story import get_git_diff, main, parse_diff_contents  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _stub_gettext_catalog():
+    """Stub gettext catalog loading so argparse never opens files via mocked open()."""
+    with patch(
+        "gettext.translation", lambda *args, **kwargs: gettext.NullTranslations()
+    ):
+        yield
 
 
 def test_get_git_diff_success():

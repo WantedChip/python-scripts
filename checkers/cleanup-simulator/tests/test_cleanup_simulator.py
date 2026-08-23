@@ -22,8 +22,12 @@ def test_get_system_targets_win32():
 
         targets = cleanup_simulator.get_system_targets()
         assert targets["system_temp"] == "C:\\Temp"
-        assert targets["pip_cache"] == "C:\\Users\\User\\AppData\\Local\\pip\\Cache"
-        assert targets["npm_cache"] == "C:\\Users\\User\\AppData\\Roaming\\npm-cache"
+        assert targets["pip_cache"] == os.path.join(
+            "C:\\Users\\User\\AppData\\Local", "pip", "Cache"
+        )
+        assert targets["npm_cache"] == os.path.join(
+            "C:\\Users\\User\\AppData\\Roaming", "npm-cache"
+        )
 
 
 def test_get_system_targets_linux():

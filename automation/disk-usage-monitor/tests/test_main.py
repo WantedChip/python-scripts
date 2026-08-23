@@ -103,13 +103,20 @@ class TestDiskUsageMonitorHelpers(unittest.TestCase):
     ) -> None:
         """psutil partition errors trigger the drive-letter fallback."""
         mock_psutil.disk_partitions.side_effect = RuntimeError("boom")
-        mounts = get_mount_points()
+        with patch("main.os.name", "nt"), patch(
+            "main.os.path.exists", return_value=True
+        ):
+            mounts = get_mount_points()
         self.assertIn("C:\\", mounts)
 
     @patch("main.HAS_PSUTIL", False)
     def test_no_psutil_falls_back_to_drive_letters(self) -> None:
         """Without psutil the Windows drive scan is used directly."""
-        mounts = get_mount_points()
+        with patch("main.os.name", "nt"), patch(
+            "main.os.path.exists",
+            side_effect=lambda path: str(path).endswith(":\\"),
+        ):
+            mounts = get_mount_points()
         self.assertIn("C:\\", mounts)
 
     def test_export_report_json_roundtrip(self) -> None:

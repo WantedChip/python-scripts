@@ -1,6 +1,7 @@
 """Unit tests for command-doctor utility."""
 
 import os
+import shlex
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -45,12 +46,13 @@ def test_check_missing_files() -> None:
         assert len(res) == 2
         assert "does not exist in the CWD" in res[0]
 
-        # Mock alternate path existing (separator check)
+        # Mock alternate path existing (separator check). shlex.quote keeps the
+        # non-native separators intact through shlex.split on every OS.
         test_path = "data/data.csv" if os.path.sep == "\\" else "data\\data.csv"
         alt_path = test_path.replace("\\", "/").replace("/", os.path.sep)
 
         mock_exists.side_effect = lambda p: p == "script.py" or p == alt_path
-        res = check_missing_files(f"python script.py {test_path}")
+        res = check_missing_files(f"python script.py {shlex.quote(test_path)}")
         assert len(res) == 1
         assert "Check path separators" in res[0]
 
@@ -72,22 +74,21 @@ def test_check_port_conflicts() -> None:
     # Conflict in stderr (port 8080)
     stderr = "OSError: [Errno 98] Address already in use: ('0.0.0.0', 8080)"
 
-    with patch("psutil.net_connections") as mock_conns, patch(
-        "psutil.Process"
-    ) as mock_proc:
-
+    # Patch the psutil handle where the module consumes it, so the test runs
+    # whether or not psutil is installed on the host OS.
+    with patch("command_doctor.psutil") as mock_psutil:
         # Setup mock connection
         mock_conn = MagicMock()
         mock_conn.laddr.port = 8080
         mock_conn.pid = 9999
-        mock_conns.return_value = [mock_conn]
+        mock_psutil.net_connections.return_value = [mock_conn]
 
         # Setup mock process
         mock_p = MagicMock()
         mock_p.name.return_value = "python"
         mock_p.cmdline.return_value = ["python", "app.py"]
         mock_p.exe.return_value = "/bin/python"
-        mock_proc.return_value = mock_p
+        mock_psutil.Process.return_value = mock_p
 
         res = check_port_conflicts(stderr)
         assert res is not None
@@ -95,14 +96,25 @@ def test_check_port_conflicts() -> None:
         assert "Owner Process: 'python'" in res
         assert "(PID: 9999)" in res
 
+    # Without psutil the port is still reported, without an owner audit.
+    with patch("command_doctor.psutil", None):
+        res = check_port_conflicts(stderr)
+        assert res is not None
+        assert "Install psutil" in res
+
 
 def test_check_virtual_env() -> None:
     """Test diagnosing venv execution setups."""
-    # Test ModuleNotFoundError
+    # Test ModuleNotFoundError. Mock every venv-detection gate (cwd .venv/venv
+    # folders, active venv env var, interpreter prefix) so the result does not
+    # depend on the host environment.
     stderr = "ModuleNotFoundError: No module named 'requests'"
-    res = check_virtual_env("python script.py", stderr)
-    assert len(res) == 1
-    assert "failed to import module 'requests'" in res[0]
+    with patch("os.path.isdir", return_value=False), patch(
+        "sys.prefix", sys.base_prefix
+    ), patch.dict(os.environ, {}, clear=True):
+        res = check_virtual_env("python script.py", stderr)
+        assert len(res) == 1
+        assert "failed to import module 'requests'" in res[0]
 
     # Test venv mismatch warning (runs python outside of venv but .venv is present)
     with patch("os.path.isdir") as mock_isdir, patch("sys.prefix", "/global"), patch(

@@ -15,7 +15,11 @@ from failure_pack import (  # noqa: E402
 
 
 def test_get_system_diagnostics_success():
-    with patch("subprocess.run") as mock_run:
+    # platform.architecture() shells out to the OS 'file' utility on POSIX,
+    # which would consume the mocked subprocess.run; pin it cross-platform.
+    with patch("subprocess.run") as mock_run, patch(
+        "platform.architecture", return_value=("64bit", "ELF")
+    ):
         mock_res = MagicMock()
         mock_res.returncode = 0
         mock_res.stdout = '[{"name": "pip", "version": "21.0.1"}]'

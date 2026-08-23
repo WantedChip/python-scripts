@@ -11,6 +11,9 @@ import config_archaeologist  # noqa: E402
 
 class TestConfigArchaeologist(unittest.TestCase):
 
+    # ";" keeps the mocked Windows PATH tokens intact even where the native
+    # os.pathsep (":" on posix) would split on the drive-letter colons.
+    @patch("os.pathsep", ";")
     @patch("os.environ.get")
     @patch("os.path.exists")
     @patch("os.path.isdir")
@@ -43,7 +46,7 @@ class TestConfigArchaeologist(unittest.TestCase):
                 return ["AppA", "AppB"]
             elif path == "C:\\Program Files (x86)":
                 return ["AppC"]
-            elif path == "C:\\Users\\Mock\\AppData\\Local\\Programs":
+            elif path == os.path.join("C:\\Users\\Mock\\AppData\\Local", "Programs"):
                 return ["AppD"]
             elif path == "C:\\MockBin":
                 return ["run.exe", "test.bat", "readme.txt", "no_ext"]

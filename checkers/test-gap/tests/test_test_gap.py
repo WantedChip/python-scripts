@@ -1,5 +1,6 @@
 """Unit tests for the test-gap script."""
 
+import gettext
 import os
 import sys
 from unittest.mock import MagicMock, mock_open, patch
@@ -16,6 +17,16 @@ from test_gap import (  # noqa: E402
     parse_diff,
     print_report,
 )
+
+
+@pytest.fixture(autouse=True)
+def _stub_gettext_catalog():
+    """Stub gettext catalog loading so argparse never opens files via mocked open()."""
+    with patch(
+        "gettext.translation", lambda *args, **kwargs: gettext.NullTranslations()
+    ):
+        yield
+
 
 SAMPLE_DIFF = """diff --git a/checkers/linter.py b/checkers/linter.py
 index 123456..789abc 100644

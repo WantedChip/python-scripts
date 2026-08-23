@@ -212,11 +212,14 @@ class TestCliAndReports(unittest.TestCase):
     def test_main_json_output_failure_is_reported(self) -> None:
         """An unwritable JSON destination reports failure but still exits."""
         with tempfile.TemporaryDirectory() as tmpdir:
+            # Make the audit root world-writable on every OS so a HIGH
+            # finding is guaranteed and main() returns 1 cross-platform.
+            os.chmod(tmpdir, 0o777)
             bad_json = pathlib.Path(tmpdir) / "no" / "such" / "dir" / "r.json"
             err = io.StringIO()
             with contextlib.redirect_stderr(err):
                 code = main([tmpdir, "--json-output", str(bad_json)])
-        self.assertEqual(code, 1)  # tmpdir itself is world-writable on Windows
+        self.assertEqual(code, 1)  # tmpdir itself is world-writable
         self.assertIn("Failed to write JSON report", err.getvalue())
 
     def test_main_min_risk_filter(self) -> None:

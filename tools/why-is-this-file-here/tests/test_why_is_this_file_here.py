@@ -1,5 +1,6 @@
 """Unit tests for why_is_this_file_here.py."""
 
+import gettext
 import os
 import sys
 from unittest.mock import mock_open, patch
@@ -18,6 +19,15 @@ from why_is_this_file_here import (  # noqa: E402
     is_git_repo,
     main,
 )
+
+
+@pytest.fixture(autouse=True)
+def _stub_gettext_catalog():
+    """Stub gettext catalog loading so argparse never opens files via mocked open()."""
+    with patch(
+        "gettext.translation", lambda *args, **kwargs: gettext.NullTranslations()
+    ):
+        yield
 
 
 def test_is_git_repo_true():

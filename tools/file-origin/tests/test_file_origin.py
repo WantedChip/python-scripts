@@ -176,15 +176,19 @@ def test_find_browser_dbs_success(mock_glob, mock_exists):
         assert "chrome" in dbs
         assert "edge" not in dbs
         assert "firefox" in dbs
-        expected_chrome = (
-            "C:\\Users\\MockUser\\AppData\\Local\\Google\\Chrome\\"
-            "User Data\\Default\\History"
+        user_profile = os.environ["USERPROFILE"]
+        expected_chrome = os.path.join(
+            user_profile,
+            "AppData",
+            "Local",
+            "Google",
+            "Chrome",
+            "User Data",
+            "Default",
+            "History",
         )
         assert dbs["chrome"] == expected_chrome
-        expected_ff = (
-            "C:\\Users\\MockUser\\AppData\\Roaming\\Mozilla\\Firefox\\"
-            "Profiles\\xyz.default\\places.sqlite"
-        )
+        expected_ff = mock_glob.return_value[0]
         assert dbs["firefox"] == expected_ff
 
 
@@ -246,7 +250,9 @@ def test_main_success(
 
     with patch("sys.argv", ["file_origin.py", "test.zip"]):
         main()
-        mock_query.assert_called_with("mock_chrome_db", "test.zip")
+        mock_query.assert_called_with(
+            "mock_chrome_db", os.path.basename(mock_abspath.return_value)
+        )
 
 
 @patch("os.path.exists", return_value=True)
@@ -268,5 +274,6 @@ def test_main_custom_browser_db(
         "sys.argv", ["file_origin.py", "test.zip", "--browser-db", "custom_db.sqlite"]
     ):
         main()
-        mock_chrome.assert_called_with("custom_db.sqlite", "test.zip")
-        mock_ff.assert_called_with("custom_db.sqlite", "test.zip")
+        expected_name = os.path.basename(mock_abspath.return_value)
+        mock_chrome.assert_called_with("custom_db.sqlite", expected_name)
+        mock_ff.assert_called_with("custom_db.sqlite", expected_name)

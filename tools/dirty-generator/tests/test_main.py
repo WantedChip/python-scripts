@@ -34,13 +34,16 @@ class TestDirtyGenerator(unittest.TestCase):
 
     def test_baseline_recording_and_validation(self):
         baseline_file = self.root_dir / "baseline.json"
-        log_path = self.root_dir / "build.log"
+        # Use forward slashes so the injected -c snippet stays valid Python
+        # regardless of Windows backslash escape sequences in temp paths.
+        log_path = (self.root_dir / "build.log").as_posix()
         cmd = f"python -c \"open('{log_path}', 'w').write('done')\""
 
         profiler = CommandProfiler(self.root_dir, baseline_path=baseline_file)
         report1 = profiler.profile_command(cmd, record_as_baseline=True)
 
-        self.assertEqual(len(report1.violations), 0)
+        # The recording run itself still reports the observed mutation...
+        self.assertEqual(len(report1.violations), 1)
         self.assertTrue(baseline_file.exists())
 
         # Second run should match baseline and have 0 violations

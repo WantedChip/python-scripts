@@ -1,5 +1,6 @@
 """Unit tests for the fixture-shrinker script."""
 
+import gettext
 import json
 import sys
 from typing import Any, List
@@ -22,6 +23,15 @@ from fixture_shrinker import (  # noqa: E402
     shrink_json,
     shrink_text,
 )
+
+
+@pytest.fixture(autouse=True)
+def _stub_gettext_catalog():
+    """Stub gettext catalog loading so argparse never opens files via mocked open()."""
+    with patch(
+        "gettext.translation", lambda *args, **kwargs: gettext.NullTranslations()
+    ):
+        yield
 
 
 def test_setup_logging() -> None:

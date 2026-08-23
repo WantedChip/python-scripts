@@ -48,22 +48,20 @@ def test_init_db(tmp_path):
 
 
 def test_get_default_screenshots_dir():
-    with patch("os.path.expanduser", return_value="C:\\Users\\Test"), patch(
-        "os.path.exists",
-        side_effect=lambda p: p == "C:\\Users\\Test\\Pictures\\Screenshots",
-    ):
-        assert (
-            screenshot_search.get_default_screenshots_dir()
-            == "C:\\Users\\Test\\Pictures\\Screenshots"
-        )
+    # Expected paths are built with os.path.join so the assertions match the
+    # platform-specific separators the function itself produces.
+    expected_shots = os.path.join("C:\\Users\\Test", "Pictures", "Screenshots")
+    expected_pics = os.path.join("C:\\Users\\Test", "Pictures")
 
     with patch("os.path.expanduser", return_value="C:\\Users\\Test"), patch(
-        "os.path.exists", side_effect=lambda p: p == "C:\\Users\\Test\\Pictures"
+        "os.path.exists", side_effect=lambda p: p == expected_shots
     ):
-        assert (
-            screenshot_search.get_default_screenshots_dir()
-            == "C:\\Users\\Test\\Pictures"
-        )
+        assert screenshot_search.get_default_screenshots_dir() == expected_shots
+
+    with patch("os.path.expanduser", return_value="C:\\Users\\Test"), patch(
+        "os.path.exists", side_effect=lambda p: p == expected_pics
+    ):
+        assert screenshot_search.get_default_screenshots_dir() == expected_pics
 
     with patch("os.path.expanduser", return_value="C:\\Users\\Test"), patch(
         "os.path.exists", return_value=False
