@@ -1,4 +1,4 @@
 # Optional dependencies for Excel and Parquet file previews
-pandas==2.2.2
+pandas>=2.3.3,<3
 openpyxl==3.1.5
-pyarrow==17.0.0
+pyarrow>=22.0.0,<23
