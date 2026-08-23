@@ -36,7 +36,23 @@ jobs:
 
       - name: Install script dependencies
         run: |
-          find . -name "requirements.txt" -not -path '*/.*' -exec pip install -r {} \;
+          # GitHub Actions runs steps with `bash -e`, so a single failing pip
+          # install must abort the step — but `find -exec ... \;` swallows the
+          # child exit code entirely (sdist build failures used to vanish into
+          # a green step). Loop explicitly and propagate any failure.
+          install_failures=0
+          while IFS= read -r req; do
+            echo "::group::pip install -r $req"
+            if ! pip install -r "$req"; then
+              install_failures=$((install_failures + 1))
+            fi
+            echo "::endgroup::"
+          done < <(find . -name "requirements.txt" -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' | sort)
+          if [ "$install_failures" -gt 0 ]; then
+            echo "$install_failures requirements file(s) failed to install."
+            exit 1
+          fi
 
       # Every check below runs independently (continue-on-error) so a single
       # failing tool never hides the others. The summary step at the end
@@ -89,8 +105,11 @@ jobs:
             -exec dirname {} \; | sort -u)
           for dir in $dirs; do
             echo "::group::mypy: $dir"
-            mypy --config-file=mypy.ini "$dir"/*.py
-            status=$?
+            # `|| status=$?` keeps errexit (bash -e) from aborting the whole
+            # step on the first failing directory — every dir must be checked
+            # so the failure count below is complete, not fail-fast.
+            status=0
+            mypy --config-file=mypy.ini "$dir"/*.py || status=$?
             echo "::endgroup::"
             if [ $status -ne 0 ]; then
               failures=$((failures + 1))
@@ -117,7 +136,23 @@ jobs:
       - name: Pip-audit check
         id: pip_audit
         continue-on-error: true
-        run: find . -name "requirements.txt" -not -path '*/.*' -exec pip-audit -r {} \;
+        run: |
+          # Loop instead of `find -exec ... \;`, which silently swallows
+          # pip-audit's exit code (vulnerabilities and dry-run crashes used
+          # to disappear into a green step).
+          audit_failures=0
+          while IFS= read -r req; do
+            echo "::group::pip-audit -r $req"
+            if ! pip-audit -r "$req"; then
+              audit_failures=$((audit_failures + 1))
+            fi
+            echo "::endgroup::"
+          done < <(find . -name "requirements.txt" -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*' | sort)
+          if [ "$audit_failures" -gt 0 ]; then
+            echo "$audit_failures requirements file(s) failed the vulnerability audit."
+            exit 1
+          fi
 
       - name: Pytest + per-script coverage gate
         id: pytest
@@ -134,15 +169,19 @@ jobs:
           echo "## Pytest + Coverage by script" >> "$GITHUB_STEP_SUMMARY"
           echo "| Script | Result |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          for test_dir in $(find . -type d -name tests -not -path '*/.*'); do
+          for test_dir in $(find . -type d -name tests -not -path '*/.*' \
+            -not -path '*/node_modules/*' -not -path '*/.next/*'); do
             script_dir=$(dirname "$test_dir")
             echo "::group::$script_dir"
+            # `|| status=$?` keeps errexit (bash -e) from aborting the whole
+            # step at the first failing script — every folder must run so the
+            # summary table and failure count below stay complete.
+            status=0
             python -m pytest "$test_dir" \
               --import-mode=importlib \
               --cov="$script_dir" \
               --cov-report=term-missing \
-              --cov-fail-under=80
-            status=$?
+              --cov-fail-under=80 || status=$?
             echo "::endgroup::"
             if [ $status -ne 0 ]; then
               echo "| $script_dir | ❌ fail |" >> "$GITHUB_STEP_SUMMARY"

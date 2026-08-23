@@ -1,2 +1,2 @@
 # Dictionary Lookup CLI
-Standard library dependencies only.
+# Standard library dependencies only.

@@ -1,2 +1,2 @@
 # Bookmark Manager CLI
-Standard library dependencies only.
+# Standard library dependencies only.

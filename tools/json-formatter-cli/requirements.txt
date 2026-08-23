@@ -1,2 +1,2 @@
 # JSON Formatter CLI
-Standard library dependencies only.
+# Standard library dependencies only.

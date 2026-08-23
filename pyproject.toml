@@ -20,5 +20,21 @@ extend-exclude = '''
 # rather than "which engine happened to run."
 core = "ctrace"
 
+[tool.pytest.ini_options]
+# Pinning this section (even empty of options) makes pyproject.toml the
+# pytest config file, which pins rootdir — and therefore confcutdir — to the
+# repo root for every invocation, so the repo-root conftest.py sys.path
+# bootstrap is always loaded no matter which tests/ directory CI passes in.
+
 [tool.pylint.messages_control]
 disable = ["duplicate-code"]
+
+[tool.pylint.format]
+# Match black/flake8/isort so C0301 can never disagree with E501.
+max-line-length = 88
+
+[tool.pylint.typecheck]
+# opencv-python ships a compiled binary module astroid cannot introspect,
+# which produces false E1101 no-member errors on every cv2.* attribute.
+ignored-modules = ["cv2"]
+generated-members = "cv2.*"

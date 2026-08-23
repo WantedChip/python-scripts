@@ -76,3 +76,7 @@ _.ITALIC
 _.UNDERLINE
 _.get_active_session
 _.calculate_total_stars
+
+# pytest hook entry points in repo-root conftest.py (called by pytest, never
+# referenced by project code)
+_.pytest_collectstart

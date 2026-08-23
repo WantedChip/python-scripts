@@ -1,2 +1,2 @@
 # Task Time Tracker CLI
-Standard library dependencies only.
+# Standard library dependencies only.
