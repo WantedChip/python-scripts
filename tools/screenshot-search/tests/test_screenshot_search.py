@@ -5,9 +5,15 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
+
 # Mock PIL and pytesseract before importing screenshot_search
+class MockTesseractError(Exception):
+    pass
+
+
 mock_pil = MagicMock()
 mock_pytesseract = MagicMock()
+mock_pytesseract.TesseractError = MockTesseractError
 sys.modules["PIL"] = mock_pil
 sys.modules["PIL.Image"] = mock_pil.Image
 sys.modules["pytesseract"] = mock_pytesseract

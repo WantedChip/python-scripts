@@ -1,13 +1,21 @@
 """Unit tests for Plagiarism Detector."""
 
+import contextlib
+import io
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from main import (
     analyze_plagiarism,
+    calculate_containment,
     calculate_cosine_similarity,
     calculate_jaccard_similarity,
     find_matching_snippets,
     generate_ngrams,
+    main,
+    parse_args,
     tokenize,
 )
 
@@ -61,6 +69,95 @@ class TestPlagiarismDetector(unittest.TestCase):
         )
         report = analyze_plagiarism(text1, text2, ngram_size=2)
         self.assertGreater(report["similarity_percentage"], 50.0)
+
+
+class TestSimilarityEdgeCases(unittest.TestCase):
+    """Edge-case coverage for similarity helpers."""
+
+    def test_generate_ngrams_shorter_than_window(self) -> None:
+        self.assertEqual(generate_ngrams(["one", "two"], n=3), [])
+
+    def test_jaccard_with_empty_sets(self) -> None:
+        self.assertEqual(calculate_jaccard_similarity(set(), set()), 1.0)
+        self.assertEqual(calculate_jaccard_similarity({("a",)}, set()), 0.0)
+
+    def test_containment_with_empty_target(self) -> None:
+        self.assertEqual(calculate_containment({("a", "b")}, set()), 0.0)
+
+    def test_cosine_with_empty_documents(self) -> None:
+        self.assertEqual(calculate_cosine_similarity([], ["word"]), 0.0)
+        self.assertEqual(calculate_cosine_similarity(["word"], []), 0.0)
+
+    def test_find_matching_snippets_without_overlap(self) -> None:
+        w1 = tokenize("alpha beta gamma delta")
+        w2 = tokenize("echo foxtrot golf hotel")
+        self.assertEqual(find_matching_snippets(w1, w2, min_length=3), [])
+
+    def test_parse_args_defaults_and_overrides(self) -> None:
+        parsed = parse_args(["a.txt", "b.txt"])
+        self.assertEqual(parsed.file1, Path("a.txt"))
+        self.assertEqual(parsed.file2, Path("b.txt"))
+        self.assertEqual(parsed.ngram, 3)
+        self.assertFalse(parsed.json_output)
+
+        parsed = parse_args(["a.txt", "b.txt", "--ngram", "5", "--json"])
+        self.assertEqual(parsed.ngram, 5)
+        self.assertTrue(parsed.json_output)
+
+
+class TestPlagiarismCli(unittest.TestCase):
+    """End-to-end CLI tests for the plagiarism detector."""
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def _write(self, name: str, text: str) -> Path:
+        path = self.root / name
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_main_missing_file_returns_error(self) -> None:
+        real = self._write("real.txt", "some content here")
+        missing = str(self.root / "ghost.txt")
+        for args in ([missing, str(real)], [str(real), missing]):
+            buf = io.StringIO()
+            with contextlib.redirect_stderr(buf):
+                ret = main(args)
+            self.assertEqual(ret, 1)
+            self.assertIn("do not exist", buf.getvalue())
+
+    def test_main_text_report_lists_matching_snippets(self) -> None:
+        doc1 = self._write(
+            "doc1.txt",
+            "the quick brown fox jumps over the lazy dog near the river bank",
+        )
+        doc2 = self._write(
+            "doc2.txt",
+            "yesterday the quick brown fox jumps over the lazy dog again",
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            ret = main([str(doc1), str(doc2)])
+        self.assertEqual(ret, 0)
+        output = buf.getvalue()
+        self.assertIn("Plagiarism & Similarity Report", output)
+        self.assertIn("Sample Matching Snippets:", output)
+        self.assertIn("quick brown fox", output)
+
+    def test_main_json_report_output(self) -> None:
+        doc1 = self._write("doc1.txt", "shared phrase sequence appears here now")
+        doc2 = self._write("doc2.txt", "shared phrase sequence appears here now")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            ret = main(["--ngram", "2", "--json", str(doc1), str(doc2)])
+        self.assertEqual(ret, 0)
+        report = json.loads(buf.getvalue())
+        self.assertEqual(report["similarity_percentage"], 100.0)
+        self.assertGreater(report["matching_snippets_count"], 0)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+import unittest.mock
 
 from main import (
     export_env_file,

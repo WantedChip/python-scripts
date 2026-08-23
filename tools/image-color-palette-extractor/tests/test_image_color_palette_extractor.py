@@ -39,9 +39,7 @@ def test_extract_color_palette(tmp_path: Path) -> None:
     assert "percentage" in palette[0]
 
 
-def test_cli_json_format(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_cli_json_format(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Test CLI JSON export output."""
     img_path = tmp_path / "test.jpg"
     img = Image.new("RGB", (60, 60), color="green")

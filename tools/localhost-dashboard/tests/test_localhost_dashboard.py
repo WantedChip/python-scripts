@@ -5,11 +5,15 @@ from unittest.mock import MagicMock
 
 # Create a mock psutil module so that tests run successfully even if psutil
 # is not installed.
-class MockAccessDenied(Exception):
+class MockPsutilError(Exception):
     pass
 
 
-class MockNoSuchProcess(Exception):
+class MockAccessDenied(MockPsutilError):
+    pass
+
+
+class MockNoSuchProcess(MockPsutilError):
     pass
 
 
@@ -17,11 +21,13 @@ class MockNoSuchProcess(Exception):
 # overriding references.
 if "psutil" not in sys.modules:
     mock_psutil = MagicMock()
-    mock_psutil.AccessDenied = MockAccessDenied
-    mock_psutil.NoSuchProcess = MockNoSuchProcess
     sys.modules["psutil"] = mock_psutil
 else:
     mock_psutil = sys.modules["psutil"]
+
+mock_psutil.Error = MockPsutilError
+mock_psutil.AccessDenied = MockAccessDenied
+mock_psutil.NoSuchProcess = MockNoSuchProcess
 
 # Add parent directory to sys.path so we can import the script
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))

@@ -4,8 +4,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+
 # Mock psutil in sys.modules so imports and patches work even if psutil isn't installed
+class MockPsutilError(Exception):
+    pass
+
+
 mock_psutil = MagicMock()
+mock_psutil.Error = MockPsutilError
 sys.modules["psutil"] = mock_psutil
 
 # Add target directory to path

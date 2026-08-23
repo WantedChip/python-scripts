@@ -1,17 +1,24 @@
 """Unit tests for Bitcoin Price Fetcher."""
 
 import csv
+import io
 import tempfile
 import unittest
+import urllib.error
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from main import (
     check_price_alerts,
+    fetch_coindesk_bitcoin_price,
     fetch_coingecko_price,
     fetch_crypto_price,
+    fetch_json,
     format_ticker_card,
     log_price_to_csv,
+    main,
 )
 
 
@@ -105,6 +112,184 @@ class TestBitcoinPriceFetcher(unittest.TestCase):
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]["coin"], "bitcoin")
             self.assertEqual(float(rows[0]["price"]), 65000.0)
+
+    def test_log_price_to_csv_oserror(self) -> None:
+        """Unwritable target paths report failure instead of crashing."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_path = str(Path(tmpdir) / "missing_dir" / "prices.csv")
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                success = log_price_to_csv(bad_path, self.sample_data_dict)
+        self.assertFalse(success)
+        self.assertIn("Error logging to CSV file", stderr.getvalue())
+
+
+class TestNetworkLayer(unittest.TestCase):
+    """Tests for the low-level JSON HTTP helper."""
+
+    @patch("main.urllib.request.urlopen")
+    def test_fetch_json_success(self, mock_urlopen: MagicMock) -> None:
+        """A 200 response with valid JSON is parsed into a dictionary."""
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = b'{"bitcoin": {"usd": 1.0}}'
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        result = fetch_json("https://example.com/api")
+
+        self.assertEqual(result, {"bitcoin": {"usd": 1.0}})
+        request = mock_urlopen.call_args[0][0]
+        self.assertIn("example.com/api", request.full_url)
+        self.assertEqual(
+            request.headers.get("User-agent"), "BitcoinPriceFetcher/1.0 (Python)"
+        )
+
+    @patch("main.urllib.request.urlopen")
+    def test_fetch_json_non_200_returns_none(self, mock_urlopen: MagicMock) -> None:
+        """Non-200 status codes yield None without raising."""
+        mock_resp = MagicMock()
+        mock_resp.status = 503
+        mock_resp.read.return_value = b"unavailable"
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        self.assertIsNone(fetch_json("https://example.com/api"))
+
+    @patch("main.urllib.request.urlopen")
+    def test_fetch_json_network_error_returns_none(
+        self, mock_urlopen: MagicMock
+    ) -> None:
+        """URLError is reported to stderr and mapped to None."""
+        mock_urlopen.side_effect = urllib.error.URLError("connection refused")
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = fetch_json("https://example.com/api")
+        self.assertIsNone(result)
+        self.assertIn("Error fetching from https://example.com/api", stderr.getvalue())
+
+    @patch("main.urllib.request.urlopen")
+    def test_fetch_json_malformed_payload_returns_none(
+        self, mock_urlopen: MagicMock
+    ) -> None:
+        """Invalid JSON payloads are treated as fetch failures."""
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = b"<html>not-json</html>"
+        mock_urlopen.return_value.__enter__.return_value = mock_resp
+
+        self.assertIsNone(fetch_json("https://example.com/api"))
+
+    @patch("main.fetch_json")
+    def test_fetch_coingecko_price_unknown_coin(self, mock_fetch: MagicMock) -> None:
+        """Unknown coins map to None instead of raising KeyError."""
+        mock_fetch.return_value = {"litecoin": {"usd": 90.0}}
+        self.assertIsNone(fetch_coingecko_price("notacoin", "usd"))
+
+
+class TestCoinDeskFallback(unittest.TestCase):
+    """Tests for the CoinDesk fallback price source."""
+
+    @patch("main.fetch_json")
+    def test_fetch_coindesk_bitcoin_price(self, mock_fetch: MagicMock) -> None:
+        """A BPI payload is normalized into ticker statistics."""
+        mock_fetch.return_value = {"bpi": {"USD": {"rate_float": 64500.0}}}
+        res = fetch_coindesk_bitcoin_price()
+        self.assertIsNotNone(res)
+        self.assertEqual(res["source"], "CoinDesk")
+        self.assertEqual(res["price"], 64500.0)
+        self.assertEqual(res["currency"], "USD")
+
+    @patch("main.fetch_json")
+    def test_fetch_coindesk_missing_bpi(self, mock_fetch: MagicMock) -> None:
+        """Payloads without BPI data map to None."""
+        mock_fetch.return_value = {"time": "2026-01-01"}
+        self.assertIsNone(fetch_coindesk_bitcoin_price())
+
+    @patch("main.fetch_coindesk_bitcoin_price")
+    @patch("main.fetch_coingecko_price")
+    def test_fallback_not_used_for_non_bitcoin(
+        self, mock_coingecko: MagicMock, mock_coindesk: MagicMock
+    ) -> None:
+        """CoinDesk fallback is skipped for non-bitcoin queries."""
+        mock_coingecko.return_value = None
+        res = fetch_crypto_price("ethereum", "usd")
+        self.assertIsNone(res)
+        mock_coindesk.assert_not_called()
+
+
+class TestCli(unittest.TestCase):
+    """CLI-level tests covering main() flows via sys.argv."""
+
+    def _run_cli(self, *args: str) -> Any:
+        """Run main() with patched argv; capture streams and exit code."""
+        stdout, stderr = io.StringIO(), io.StringIO()
+        exit_code: Any = None
+        argv = ["main.py"] + list(args)
+        with redirect_stdout(stdout), redirect_stderr(stderr), patch("sys.argv", argv):
+            try:
+                main()
+            except SystemExit as exc:
+                exit_code = exc.code
+        return stdout.getvalue(), stderr.getvalue(), exit_code
+
+    @patch("main.fetch_crypto_price")
+    def test_cli_success_prints_ticker_and_logs_csv(
+        self, mock_fetch: MagicMock
+    ) -> None:
+        """A successful run prints the ticker card, alerts, and logs CSV."""
+        mock_fetch.return_value = {
+            "source": "CoinGecko",
+            "coin": "ethereum",
+            "currency": "USD",
+            "price": 3500.0,
+            "market_cap": 420000000000.0,
+            "change_24h": -1.2,
+            "volume_24h": 15000000000.0,
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = str(Path(tmpdir) / "log.csv")
+            stdout, _, code = self._run_cli(
+                "--coin",
+                "ethereum",
+                "--currency",
+                "usd",
+                "--alert-above",
+                "3000",
+                "--log-csv",
+                csv_path,
+            )
+            self.assertIsNone(code)
+            self.assertIn("CRYPTO TICKER: ETHEREUM / USD", stdout)
+            self.assertIn("$3,500.00 USD", stdout)
+            self.assertIn("-1.20%", stdout)
+            self.assertIn("[ALERT] HIGH ALERT", stdout)
+            self.assertTrue(Path(csv_path).exists())
+
+    @patch("main.fetch_crypto_price")
+    def test_cli_no_alerts_when_within_thresholds(self, mock_fetch: MagicMock) -> None:
+        """No alert banner is printed while price sits between thresholds."""
+        mock_fetch.return_value = {
+            "source": "CoinGecko",
+            "coin": "bitcoin",
+            "currency": "USD",
+            "price": 50000.0,
+            "market_cap": 0.0,
+            "change_24h": 0.0,
+            "volume_24h": 0.0,
+        }
+        stdout, _, code = self._run_cli(
+            "--alert-above", "60000", "--alert-below", "40000"
+        )
+        self.assertIsNone(code)
+        self.assertNotIn("[ALERT]", stdout)
+        self.assertIn("Market Cap    : N/A", stdout)
+
+    @patch("main.fetch_crypto_price")
+    def test_cli_failure_exits_nonzero(self, mock_fetch: MagicMock) -> None:
+        """Missing price data exits with status 1 and an error message."""
+        mock_fetch.return_value = None
+        _, stderr, code = self._run_cli("--coin", "bitcoin")
+        self.assertEqual(code, 1)
+        self.assertIn("Could not fetch price data for coin 'bitcoin'", stderr)
 
 
 if __name__ == "__main__":

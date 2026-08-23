@@ -7,18 +7,23 @@ import pytest
 
 # Create a mock psutil module so that tests run successfully even if psutil
 # is not installed.
-class MockAccessDenied(Exception):
+class MockPsutilError(Exception):
     pass
 
 
-class MockNoSuchProcess(Exception):
+class MockAccessDenied(MockPsutilError):
+    pass
+
+
+class MockNoSuchProcess(MockPsutilError):
     pass
 
 
 mock_psutil = MagicMock()
+sys.modules["psutil"] = mock_psutil
+mock_psutil.Error = MockPsutilError
 mock_psutil.AccessDenied = MockAccessDenied
 mock_psutil.NoSuchProcess = MockNoSuchProcess
-sys.modules["psutil"] = mock_psutil
 
 # Add parent directory to sys.path so we can import the script
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))

@@ -12,14 +12,19 @@ else:
     mock_psutil = sys.modules["psutil"]
 
 
-class MockNoSuchProcess(Exception):
+class MockPsutilError(Exception):
     pass
 
 
-class MockAccessDenied(Exception):
+class MockNoSuchProcess(MockPsutilError):
     pass
 
 
+class MockAccessDenied(MockPsutilError):
+    pass
+
+
+mock_psutil.Error = MockPsutilError
 mock_psutil.NoSuchProcess = MockNoSuchProcess
 mock_psutil.AccessDenied = MockAccessDenied
 

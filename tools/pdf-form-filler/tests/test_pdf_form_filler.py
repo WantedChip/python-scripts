@@ -11,11 +11,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from pdf_form_filler import (  # noqa: E402
-    fill_pdf_form,
-    inspect_form_fields,
-    main,
-)
+from pdf_form_filler import fill_pdf_form, inspect_form_fields, main  # noqa: E402
 
 
 def create_dummy_pdf(
