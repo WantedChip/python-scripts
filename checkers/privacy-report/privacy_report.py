@@ -65,7 +65,7 @@ def check_exif_gps(file_path: str) -> Tuple[bool, str]:
                         g_tag = GPSTAGS.get(g_id, g_id)
                         gps_data[g_tag] = g_val
                     return True, f"GPS metadata found: {list(gps_data.keys())}"
-    except (OSError, ValueError, KeyError, AttributeError):
+    except Exception:  # pylint: disable=broad-exception-caught
         return False, "EXIF read error"
     return False, ""
 
@@ -87,7 +87,7 @@ def check_pdf_metadata(file_path: str) -> Tuple[bool, str]:
                 leak_details.append(f"Producer/Software: {meta.producer}")
             if leak_details:
                 return True, "Metadata fields found: " + ", ".join(leak_details)
-    except (OSError, ValueError, AttributeError, KeyError):
+    except Exception:  # pylint: disable=broad-exception-caught
         return False, "PDF read error"
     return False, ""
 

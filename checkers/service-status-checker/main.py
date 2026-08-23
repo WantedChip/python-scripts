@@ -152,9 +152,9 @@ def process_services(services: List[str], auto_restart: bool = False) -> Dict[st
                     info["restart_failed"] = True
         results.append(info)
 
-    if stopped_count == 0:
+    if stopped_count in (0, restarted_count):
         overall_status = "HEALTHY"
-    elif restarted_count == stopped_count:
+    elif restarted_count > 0:
         overall_status = "DEGRADED"
     else:
         overall_status = "UNHEALTHY"

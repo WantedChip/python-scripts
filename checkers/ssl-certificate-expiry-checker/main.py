@@ -79,7 +79,7 @@ def check_domain_expiry(
             "warning": is_warning or is_expired,
             "error": None,
         }
-    except (OSError, ssl.SSLError, ValueError) as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         return {
             "domain": domain,
             "port": port,

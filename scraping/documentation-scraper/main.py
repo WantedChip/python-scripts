@@ -44,6 +44,7 @@ class MainContentHTMLParser(HTMLParser):
         self.in_title = False
         self.links: List[str] = []
         self.skip_depth = 0
+        self.skip_open_tag = ""
         self.main_html_parts: List[str] = []
         self.main_text_parts: List[str] = []
         self.in_main = False
@@ -66,6 +67,7 @@ class MainContentHTMLParser(HTMLParser):
         is_sidebar = "sidebar" in attr_dict.get("class", "").lower()
         if tag_lower in CLUTTER_TAGS or is_sidebar:
             self.skip_depth += 1
+            self.skip_open_tag = tag_lower
 
         is_content = "content" in attr_dict.get("class", "").lower()
         if tag_lower in ("main", "article") or is_content:
@@ -86,7 +88,11 @@ class MainContentHTMLParser(HTMLParser):
         if self.skip_depth == 0 and tag_lower not in CLUTTER_TAGS:
             self.main_html_parts.append(f"</{tag}>")
 
-        if tag_lower in CLUTTER_TAGS or "sidebar" in tag_lower:
+        if self.skip_depth > 0 and (
+            tag_lower in CLUTTER_TAGS
+            or "sidebar" in tag_lower
+            or tag_lower == self.skip_open_tag
+        ):
             if self.skip_depth > 0:
                 self.skip_depth -= 1
 

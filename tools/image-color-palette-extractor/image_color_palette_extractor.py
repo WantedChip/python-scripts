@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     from PIL import Image
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -82,7 +83,11 @@ def extract_color_palette(
 
             results: List[Dict[str, Any]] = []
 
-            for count, idx in color_counts:
+            for count, ink in color_counts:
+                # For quantized (P-mode) images the "ink" is the palette
+                # index; stubs type getcolors()' second element as a generic
+                # pixel-value union, so coerce explicitly.
+                idx = int(ink)  # type: ignore[arg-type]
                 r = palette[idx * 3]
                 g = palette[idx * 3 + 1]
                 b = palette[idx * 3 + 2]

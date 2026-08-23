@@ -53,6 +53,15 @@ def fetch_url_content(url: str, timeout: int = 10) -> str:
         return str(response.read().decode("utf-8"))
 
 
+def _find_first_child(item: ET.Element, *paths: str) -> Optional[ET.Element]:
+    """Return the first existing child element among the given tag paths."""
+    for path in paths:
+        elem = item.find(path)
+        if elem is not None:
+            return elem
+    return None
+
+
 def parse_rss_feed(xml_content: str) -> List[Dict[str, str]]:
     """Parse RSS/Atom XML string to extract headlines.
 
@@ -76,17 +85,13 @@ def parse_rss_feed(xml_content: str) -> List[Dict[str, str]]:
 
         for item in items:
             t_atom = "{http://www.w3.org/2005/Atom}title"
-            title_elem = item.find("title") or item.find(t_atom)
+            title_elem = _find_first_child(item, "title", t_atom)
             l_atom = "{http://www.w3.org/2005/Atom}link"
-            link_elem = item.find("link") or item.find(l_atom)
+            link_elem = _find_first_child(item, "link", l_atom)
             d_atom = "{http://www.w3.org/2005/Atom}summary"
-            desc_elem = (
-                item.find("description") or item.find("summary") or item.find(d_atom)
-            )
+            desc_elem = _find_first_child(item, "description", "summary", d_atom)
             p_atom = "{http://www.w3.org/2005/Atom}published"
-            date_elem = (
-                item.find("pubDate") or item.find("published") or item.find(p_atom)
-            )
+            date_elem = _find_first_child(item, "pubDate", "published", p_atom)
 
             title = (
                 title_elem.text.strip()

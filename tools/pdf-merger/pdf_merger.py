@@ -33,9 +33,7 @@ def parse_pdf_input_spec(input_spec: str) -> Tuple[Path, Optional[str]]:
     return Path(input_spec), None
 
 
-def parse_page_range(
-    range_str: str, max_pages: int
-) -> Optional[Tuple[int, int]]:
+def parse_page_range(range_str: str, max_pages: int) -> Optional[Tuple[int, int]]:
     """Parse 1-based page range string (e.g. 1-5) into 0-based tuple range.
 
     Args:
@@ -89,9 +87,7 @@ def merge_pdf_files(
                 writer.close()
                 return False
 
-            outline_title = (
-                pdf_path.stem if add_bookmarks else None
-            )  # vulture: ignore
+            outline_title = pdf_path.stem if add_bookmarks else None  # vulture: ignore
 
             try:
                 if password:
@@ -193,9 +189,7 @@ def main(args: Optional[List[str]] = None) -> int:
         return 1
 
     out_path = Path(parsed_args.output)
-    logger.info(
-        "Merging %d PDF files into %s...", len(pdf_specs), out_path.resolve()
-    )
+    logger.info("Merging %d PDF files into %s...", len(pdf_specs), out_path.resolve())
 
     success = merge_pdf_files(
         pdf_specs,

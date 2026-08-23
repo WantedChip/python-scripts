@@ -97,7 +97,7 @@ def quarantine_path(path: str, quarantine_dir: str, db_path: str, force: bool) -
                         zipf.write(full_fpath, rel_path)
             else:
                 zipf.write(abs_path, base_name)
-    except (zipfile.BadZipFile, OSError, ValueError) as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Error: Failed to create quarantine archive: {e}", file=sys.stderr)
         if os.path.exists(archive_path):
             try:

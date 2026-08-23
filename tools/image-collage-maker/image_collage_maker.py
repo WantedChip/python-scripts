@@ -17,6 +17,7 @@ from typing import List, Optional, Tuple
 
 try:
     from PIL import Image, ImageOps
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False

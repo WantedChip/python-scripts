@@ -37,7 +37,7 @@ def get_listening_ports() -> List[int]:
         for conn in psutil.net_connections(kind="tcp"):
             if conn.status == "LISTEN" and conn.laddr:
                 ports.append(conn.laddr.port)
-    except (OSError, ValueError, AttributeError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return list(set(ports))
 

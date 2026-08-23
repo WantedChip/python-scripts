@@ -320,7 +320,11 @@ def main() -> None:
 
     target_dir = Path(args.dir)
     config_file = Path(args.config) if args.config else None
-    rules = load_category_rules(config_file)
+    try:
+        rules = load_category_rules(config_file)
+    except (OSError, ValueError) as e:
+        print(f"Error loading category rules: {e}", file=sys.stderr)
+        sys.exit(1)
 
     plan = build_organize_plan(
         directory=target_dir,

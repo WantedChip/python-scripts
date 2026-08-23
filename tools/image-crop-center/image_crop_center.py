@@ -16,6 +16,7 @@ from typing import List, Optional, Tuple
 
 try:
     from PIL import Image
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -257,11 +258,7 @@ def main(args: Optional[List[str]] = None) -> int:
 
     success_cnt = 0
     for src in image_files:
-        rel = (
-            src.relative_to(input_path)
-            if input_path.is_dir()
-            else Path(src.name)
-        )
+        rel = src.relative_to(input_path) if input_path.is_dir() else Path(src.name)
         dst = out_dir / rel.parent / f"{rel.stem}{parsed_args.suffix}{rel.suffix}"
 
         ok = crop_image_center(

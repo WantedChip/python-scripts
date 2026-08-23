@@ -13,6 +13,15 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
+# Codecs named after a specific byte order whose decoded text retains the
+# byte order mark (U+FEFF), mapped to their BOM signatures.
+_BOM_CODEC_PREFIXES: Dict[str, bytes] = {
+    "utf-32-le": b"\xff\xfe\x00\x00",
+    "utf-32-be": b"\x00\x00\xfe\xff",
+    "utf-16-le": b"\xff\xfe",
+    "utf-16-be": b"\xfe\xff",
+}
+
 
 def detect_encoding(data: bytes) -> str:
     """Detect text encoding from raw byte sequence using BOM checks.
@@ -49,12 +58,14 @@ def detect_encoding(data: bytes) -> str:
     except UnicodeDecodeError:
         pass
 
-    # Try strict UTF-16
-    try:
-        data.decode("utf-16")
-        return "utf-16"
-    except (UnicodeDecodeError, ValueError):
-        pass
+    # Try strict UTF-16. Only plausible when NUL bytes hint at wide-encoded
+    # text; single-byte encodings (Latin-1/CP1252) rarely contain NUL bytes.
+    if b"\x00" in data:
+        try:
+            data.decode("utf-16")
+            return "utf-16"
+        except (UnicodeDecodeError, ValueError):
+            pass
 
     # Try Windows-1252 / CP1252 vs ISO-8859-1 (Latin-1)
     # Check if bytes are valid CP1252
@@ -100,6 +111,11 @@ def convert_file_encoding(
 
     # Decode text using source encoding
     text = raw_bytes.decode(detected, errors=errors)
+
+    # Drop the byte order mark retained by byte-order-specific codecs
+    bom = _BOM_CODEC_PREFIXES.get(detected)
+    if bom is not None and raw_bytes.startswith(bom):
+        text = text.removeprefix("\ufeff")
 
     # Prepare output path
     output_path.parent.mkdir(parents=True, exist_ok=True)

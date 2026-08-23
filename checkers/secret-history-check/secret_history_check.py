@@ -29,7 +29,7 @@ def is_git_repo(repo_path: str) -> bool:
         return False
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,too-many-branches,consider-using-with
 def scan_git_history(repo_path: str, query: Optional[str]) -> List[Dict[str, str]]:
     """Scan all commits/diffs in the Git repository for secrets."""
     findings: List[Dict[str, str]] = []
@@ -56,57 +56,65 @@ def scan_git_history(repo_path: str, query: Optional[str]) -> List[Dict[str, str
     cmd = ["git", "log", "-p", "--all", "--unified=0"]
 
     try:
-        with subprocess.Popen(  # nosec B603
+        proc = subprocess.Popen(  # nosec B603
             cmd,
             cwd=repo_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             errors="replace",
-        ) as proc:
-            commit_hash = "Unknown"
-            author = "Unknown"
-            date_str = "Unknown"
-            current_file = "Unknown"
-
-            if proc.stdout is None:
-                return findings
-
-            for line in proc.stdout:
-                line_strip = line.strip()
-
-                # Track commit context
-                if line_strip.startswith("commit "):
-                    commit_hash = line_strip.split()[1]
-                elif line_strip.startswith("Author: "):
-                    author = line_strip[8:]
-                elif line_strip.startswith("Date:   "):
-                    date_str = line_strip[8:]
-                elif line_strip.startswith("diff --git "):
-                    parts = line_strip.split()
-                    if len(parts) >= 4:
-                        current_file = parts[3].lstrip("b/")
-
-                # Parse only additions in the diff
-                elif line.startswith("+") and not line.startswith("+++"):
-                    added_content = line[1:]
-                    for rule_name, rx in compiled_rules.items():
-                        match = rx.search(added_content)
-                        if match:
-                            findings.append(
-                                {
-                                    "commit": commit_hash,
-                                    "author": author,
-                                    "date": date_str,
-                                    "file": current_file,
-                                    "leak_type": rule_name,
-                                    "line": added_content.strip()[:80],
-                                }
-                            )
-                            break
+        )
     except (OSError, ValueError, RuntimeError) as e:
         print(f"Error starting git log command: {e}", file=sys.stderr)
         return findings
+
+    commit_hash = "Unknown"
+    author = "Unknown"
+    date_str = "Unknown"
+    current_file = "Unknown"
+
+    try:
+        if proc.stdout is None:
+            return findings
+
+        for line in proc.stdout:
+            line_strip = line.strip()
+
+            # Track commit context
+            if line_strip.startswith("commit "):
+                commit_hash = line_strip.split()[1]
+            elif line_strip.startswith("Author: "):
+                author = line_strip[8:]
+            elif line_strip.startswith("Date:   "):
+                date_str = line_strip[8:]
+            elif line_strip.startswith("diff --git "):
+                parts = line_strip.split()
+                if len(parts) >= 4:
+                    current_file = parts[3].lstrip("b/")
+
+            # Parse only additions in the diff
+            elif line.startswith("+") and not line.startswith("+++"):
+                added_content = line[1:]
+                for rule_name, rx in compiled_rules.items():
+                    match = rx.search(added_content)
+                    if match:
+                        findings.append(
+                            {
+                                "commit": commit_hash,
+                                "author": author,
+                                "date": date_str,
+                                "file": current_file,
+                                "leak_type": rule_name,
+                                "line": added_content.strip()[:80],
+                            }
+                        )
+                        break
+    except (OSError, ValueError, RuntimeError) as e:
+        print(f"Error reading git log output: {e}", file=sys.stderr)
+    finally:
+        if proc.stdout is not None:
+            proc.stdout.close()
+        proc.wait()
 
     return findings
 

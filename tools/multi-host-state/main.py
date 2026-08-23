@@ -16,7 +16,13 @@ import os
 import re
 import subprocess  # nosec B404
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# no-name-in-module: astroid cannot introspect concurrent.futures on some
+# interpreter versions (py3.14); the import itself is valid on all of them.
+from concurrent.futures import (  # pylint: disable=no-name-in-module
+    ThreadPoolExecutor,
+    as_completed,
+)
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 

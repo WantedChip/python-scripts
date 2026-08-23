@@ -138,7 +138,9 @@ def format_cell(text: str, width: int, align: str = "left") -> str:
     if align == "right":
         return text.rjust(width)
     if align == "center":
-        return text.center(width)
+        pad = max(width - len(text), 0)
+        left = pad // 2
+        return " " * left + text + " " * (pad - left)
     return text.ljust(width)
 
 
@@ -191,12 +193,10 @@ def render_table(
             format_cell(cell, widths[i], align) for i, cell in enumerate(padded_row)
         ]
 
-        if style_name == "markdown":
-            line = v + " " + (v + " ").join(cells) + " " + v
-        elif style_name == "simple":
+        if style_name == "simple":
             line = (" " + v + " ").join(cells)
         else:
-            line = v + " " + (v + " ").join(cells) + " " + v
+            line = v + " " + (" | ").join(cells) + " " + v
 
         output_lines.append(line)
 

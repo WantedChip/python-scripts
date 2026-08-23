@@ -10,6 +10,7 @@ import argparse
 import calendar
 import sqlite3
 import sys
+from contextlib import closing
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -37,7 +38,7 @@ class HabitTracker:
         return sqlite3.connect(self.db_path)
 
     def _init_db(self) -> None:
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS habits (
@@ -71,7 +72,7 @@ class HabitTracker:
         Returns:
             Inserted habit ID.
         """
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO habits (name, description) VALUES (?, ?)",
@@ -82,7 +83,7 @@ class HabitTracker:
 
     def list_habits(self) -> List[Dict[str, Any]]:
         """List all tracked habits."""
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM habits ORDER BY id ASC")
@@ -90,7 +91,7 @@ class HabitTracker:
 
     def delete_habit(self, name: str) -> bool:
         """Delete a habit by name."""
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM habits WHERE name = ?", (name,))
             conn.commit()
@@ -107,7 +108,7 @@ class HabitTracker:
             True if checked in, False if already checked in or habit not found.
         """
         target_date = date_str or date.today().isoformat()
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM habits WHERE name = ?", (name,))
             row = cursor.fetchone()
@@ -128,7 +129,7 @@ class HabitTracker:
     def uncheckin(self, name: str, date_str: Optional[str] = None) -> bool:
         """Remove a check-in for a habit."""
         target_date = date_str or date.today().isoformat()
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM habits WHERE name = ?", (name,))
             row = cursor.fetchone()
@@ -145,7 +146,7 @@ class HabitTracker:
 
     def get_checkin_dates(self, habit_name: str) -> List[date]:
         """Fetch all check-in dates for a habit sorted chronologically."""
-        with self._get_conn() as conn:
+        with closing(self._get_conn()) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """

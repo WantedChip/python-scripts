@@ -53,7 +53,7 @@ def get_windows_tasks() -> List[Dict[str, str]]:
                         "status": status,
                     }
                 )
-    except (OSError, ValueError, csv.Error):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return tasks
 
@@ -133,8 +133,8 @@ def get_unix_cron_entries() -> List[Dict[str, str]]:
     for cdir in cron_dirs:
         if os.path.exists(cdir):
             try:
-                for f in os.listdir(cdir):
-                    cron_files.append(os.path.join(cdir, f))
+                for entry in os.listdir(cdir):
+                    cron_files.append(os.path.join(cdir, entry))
             except OSError:
                 pass
 

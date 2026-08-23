@@ -219,7 +219,7 @@ def generate_passphrase(
 
     Returns (passphrase, entropy_bits, strength_rating).
     """
-    words_pool = wordlist or DEFAULT_WORDLIST
+    words_pool = wordlist if wordlist is not None else DEFAULT_WORDLIST
     if not words_pool:
         raise ValueError("Wordlist cannot be empty.")
 

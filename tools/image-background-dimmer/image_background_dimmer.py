@@ -59,8 +59,8 @@ def dim_image_background(
 
             # 1. Reduce overall image brightness
             if dim_factor != 1.0:
-                enh = ImageEnhance.Brightness(base_img)  # type: ignore[no-untyped-call]
-                base_img = enh.enhance(dim_factor)  # type: ignore[no-untyped-call]
+                enh = ImageEnhance.Brightness(base_img)
+                base_img = enh.enhance(dim_factor)
 
             # 2. Composite semi-transparent overlay
             if opacity > 0.0:

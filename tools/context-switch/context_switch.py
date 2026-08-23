@@ -34,7 +34,7 @@ def get_current_branch(cwd: str) -> str:
             check=False,
         )  # nosec
         return res.stdout.strip() or "HEAD detached"
-    except (OSError, ValueError):
+    except Exception:  # pylint: disable=broad-exception-caught
         return "Unknown"
 
 

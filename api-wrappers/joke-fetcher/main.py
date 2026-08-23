@@ -26,7 +26,7 @@ def fetch_joke(
     Returns:
         JSON response payload as dict, or None on failure.
     """
-    cat = category.strip() if category else "Programming"
+    cat = category.strip() or "Programming"
     params = []
     if safe_mode:
         params.append("safe-mode")

@@ -10,7 +10,6 @@ import argparse
 import csv
 import json
 import sys
-import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Optional, cast
@@ -61,21 +60,10 @@ def search_universities(
     query_str = urllib.parse.urlencode(params)
     url = f"{HIPOLABS_API_URL}?{query_str}"
 
-    req = urllib.request.Request(
-        url,
-        headers={"User-Agent": "UniversitySearchFetcher/1.0 (Python)"},
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=12) as response:  # nosec B310
-            if response.status == 200:
-                raw_data = response.read().decode("utf-8")
-                return cast(List[Dict[str, Any]], json.loads(raw_data))
-            raise RuntimeError(f"API Error {response.status}")
-    except urllib.error.HTTPError as err:
-        raise RuntimeError(f"HTTP Error {err.code}: {err.reason}") from err
-    except urllib.error.URLError as err:
-        raise RuntimeError(f"Network error: {err.reason}") from err
+    data = fetch_json(url)
+    if data is None:
+        raise RuntimeError(f"Network error: failed to fetch data from {url}")
+    return cast(List[Dict[str, Any]], data)
 
 
 def extract_university_details(record: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,18 +74,21 @@ def extract_university_details(record: Dict[str, Any]) -> Dict[str, Any]:
 
     Returns:
         Dict with keys: 'name', 'country', 'country_code', 'state_province',
-        'domains', 'web_pages', 'primary_website'.
+        'domains', 'web_pages', 'primary_website', 'primary_domain'.
     """
     web_pages = record.get("web_pages", [])
+    domains = record.get("domains", [])
     primary_website = web_pages[0] if web_pages else "N/A"
+    primary_domain = domains[0] if domains else "N/A"
     return {
         "name": record.get("name", "Unknown"),
         "country": record.get("country", "Unknown"),
         "country_code": record.get("alpha_two_code", ""),
         "state_province": record.get("state-province") or "",
-        "domains": ", ".join(record.get("domains", [])),
+        "domains": ", ".join(domains),
         "web_pages": ", ".join(web_pages),
         "primary_website": primary_website,
+        "primary_domain": primary_domain,
     }
 
 
@@ -121,15 +112,15 @@ def format_university_table(records: List[Dict[str, Any]], limit: int = 10) -> s
         line_sep,
         f"  UNIVERSITY SEARCH RESULTS ({count_str})",
         line_sep,
-        f"{'Name':<40} | {'Country':<15} | {'Website':<18}",
+        f"{'Name':<40} | {'Country':<15} | {'Website':<40}",
         "-" * 80,
     ]
 
     for r in display_records:
         name = r["name"][:38] + ".." if len(r["name"]) > 40 else r["name"]
         country = r["country"][:15]
-        website = r["primary_website"][:18]
-        lines.append(f"{name:<40} | {country:<15} | {website:<18}")
+        website = r["primary_website"][:40]
+        lines.append(f"{name:<40} | {country:<15} | {website:<40}")
 
     lines.append(line_sep)
     return "\n".join(lines)

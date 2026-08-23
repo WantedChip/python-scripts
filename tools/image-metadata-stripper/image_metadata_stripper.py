@@ -16,6 +16,7 @@ from typing import List, Optional
 
 try:
     from PIL import Image, ImageOps
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -45,17 +46,22 @@ def strip_metadata(
         return False
 
     try:
-        with Image.open(image_path) as img:
+        with Image.open(image_path) as src:
+            # exif_transpose() may return a new image; bind it to the same
+            # name via a base-class annotation instead of rebinding `src`
+            # (Image.open types it as ImageFile — strict mypy rejects the
+            # incompatible reassignment).
+            img: Image.Image = src
             if preserve_orientation:
                 try:
-                    img = ImageOps.exif_transpose(img)
+                    img = ImageOps.exif_transpose(src)
                 except Exception:  # pylint: disable=broad-exception-caught # nosec B110
                     pass
 
             # Create clean copy of pixel data without EXIF info dictionary
             data = list(img.getdata())
             clean_img = Image.new(img.mode, img.size)
-            clean_img.putdata(data)  # type: ignore[no-untyped-call]
+            clean_img.putdata(data)
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
             if output_path.suffix.lower() in (".jpg", ".jpeg"):
@@ -163,11 +169,7 @@ def main(args: Optional[List[str]] = None) -> int:
         if parsed_args.in_place:
             dst = src
         else:
-            rel = (
-                src.relative_to(input_path)
-                if input_path.is_dir()
-                else Path(src.name)
-            )
+            rel = src.relative_to(input_path) if input_path.is_dir() else Path(src.name)
             dst = out_dir / rel.parent / f"{rel.stem}{parsed_args.suffix}{rel.suffix}"
 
         ok = strip_metadata(src, dst)

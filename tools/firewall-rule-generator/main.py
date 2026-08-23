@@ -16,8 +16,10 @@ from typing import Any, Dict, List, Optional
 
 try:
     import yaml
+
+    HAS_YAML = True
 except ImportError:
-    yaml = None
+    HAS_YAML = False
 
 
 class FirewallRule:
@@ -87,7 +89,7 @@ def load_rules(file_path: Path) -> List[FirewallRule]:
     data: Dict[str, Any] = {}
 
     if file_path.suffix in [".yaml", ".yml"]:
-        if yaml is None:
+        if not HAS_YAML:
             msg = "PyYAML package is required to parse YAML files."
             raise RuntimeError(msg)
         data = yaml.safe_load(content) or {}
@@ -95,16 +97,16 @@ def load_rules(file_path: Path) -> List[FirewallRule]:
         try:
             data = json.loads(content)
         except json.JSONDecodeError as err:
-            if yaml is not None:
+            if HAS_YAML:
                 # Fallback attempt with YAML parser
                 data = yaml.safe_load(content) or {}
             else:
                 msg = f"Failed to parse JSON file '{file_path}': {err}"
                 raise ValueError(msg) from err
 
-    raw_rules = data.get("rules", [])
+    raw_rules = data.get("rules", []) if isinstance(data, dict) else None
     if not isinstance(raw_rules, list):
-        raise ValueError("Rules specification must contain a 'rules' list.")
+        raise ValueError("Rules specification must be a mapping with a 'rules' list.")
 
     rules: List[FirewallRule] = []
     for idx, item in enumerate(raw_rules):

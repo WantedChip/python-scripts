@@ -80,20 +80,19 @@ def normalize_price(price_str: str) -> Tuple[float, str, str]:
     elif "CAD" in raw or "C$" in raw:
         currency = "CAD"
 
-    clean = re.sub(r"[^\d\.KMB]", "", raw)
+    # Detect a K/M/B multiplier suffix attached to the number (e.g. "450K")
+    # before stripping non-numeric characters like the "/MO" rent marker.
+    multiplier = 1.0
+    suffix_match = re.search(r"(?<=\d)\s?(K|M|B)(?![A-Z])", raw)
+    if suffix_match:
+        multiplier = {"K": 1_000.0, "M": 1_000_000.0, "B": 1_000_000_000.0}[
+            suffix_match.group(1)
+        ]
+        raw = raw[: suffix_match.start()]
+
+    clean = re.sub(r"[^\d\.]", "", raw)
     if not clean:
         return 0.0, currency, listing_type
-
-    multiplier = 1.0
-    if clean.endswith("K"):
-        multiplier = 1_000.0
-        clean = clean[:-1]
-    elif clean.endswith("M"):
-        multiplier = 1_000_000.0
-        clean = clean[:-1]
-    elif clean.endswith("B"):
-        multiplier = 1_000_000_000.0
-        clean = clean[:-1]
 
     try:
         val = float(clean) * multiplier

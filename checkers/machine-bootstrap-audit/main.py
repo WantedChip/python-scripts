@@ -13,7 +13,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 
 @dataclass
@@ -74,6 +74,15 @@ UNCHECKED_BINARY_PATTERNS = [
     ),
 ]
 
+# Matches existence checks such as `command -v docker`, `which terraform`,
+# `type npm`, or Python's `shutil.which("docker")` so later references to the
+# same binary are treated as verified (pre-flight check already present).
+BINARY_CHECK_PATTERN = re.compile(
+    r"\b(?:command\s+-v|which|type)\s+([A-Za-z_][A-Za-z0-9_.-]*)"
+    r"|shutil\.which\(\s*[\"']([A-Za-z_][A-Za-z0-9_.-]*)[\"']",
+    re.IGNORECASE,
+)
+
 
 def audit_script_file(script_path: Path) -> List[AuditFinding]:
     """Perform static analysis on a setup script file."""
@@ -91,12 +100,17 @@ def audit_script_file(script_path: Path) -> List[AuditFinding]:
 
     content = script_path.read_text(encoding="utf-8", errors="ignore")
     lines = content.splitlines()
+    checked_binaries: Set[str] = set()
 
     for idx, line in enumerate(lines, start=1):
         stripped = line.strip()
 
         if stripped.startswith("#") or stripped.startswith("//"):
             continue
+
+        for check_match in BINARY_CHECK_PATTERN.finditer(line):
+            verified = check_match.group(1) or check_match.group(2)
+            checked_binaries.add(verified.lower())
 
         for pattern, desc in INTERACTIVE_PATTERNS:
             if pattern.search(line):
@@ -138,7 +152,9 @@ def audit_script_file(script_path: Path) -> List[AuditFinding]:
             chk in line for chk in ["command -v", "which ", "type ", "shutil.which"]
         ):
             for pattern, desc in UNCHECKED_BINARY_PATTERNS:
-                if pattern.search(line):
+                for bin_match in pattern.finditer(line):
+                    if bin_match.group(0).lower() in checked_binaries:
+                        continue
                     findings.append(
                         AuditFinding(
                             line_number=idx,

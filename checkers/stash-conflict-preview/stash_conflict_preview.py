@@ -41,7 +41,7 @@ def get_stashes(repo_path: str) -> List[str]:
             check=False,
         )  # nosec
         return [line.strip() for line in res.stdout.split("\n") if line.strip()]
-    except (OSError, ValueError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         return []
 
 
@@ -81,9 +81,9 @@ def get_stash_diff_ranges(
             text=True,
             check=False,
         )  # nosec
-        if res.returncode == 0:
+        if res.returncode == 0 and res.stdout is not None:
             return parse_diff_hunks(res.stdout)
-    except (OSError, ValueError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return {}
 
@@ -99,9 +99,9 @@ def get_local_diff_ranges(repo_path: str) -> Dict[str, List[Tuple[int, int]]]:
             text=True,
             check=False,
         )  # nosec
-        if res.returncode == 0:
+        if res.returncode == 0 and res.stdout is not None:
             return parse_diff_hunks(res.stdout)
-    except (OSError, ValueError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return {}
 
@@ -119,9 +119,9 @@ def get_head_diff_ranges(
             text=True,
             check=False,
         )  # nosec
-        if res.returncode == 0:
+        if res.returncode == 0 and res.stdout is not None:
             return parse_diff_hunks(res.stdout)
-    except (OSError, ValueError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return {}
 
@@ -198,8 +198,6 @@ def main() -> None:
 
     # 2. Extract ranges
     stash_diff = get_stash_diff_ranges(repo_path, stash_id)
-    local_diff = get_local_diff_ranges(repo_path)
-    head_diff = get_head_diff_ranges(repo_path, stash_id)
 
     if not stash_diff:
         print(
@@ -207,6 +205,9 @@ def main() -> None:
             "untracked files)."
         )
         sys.exit(0)
+
+    local_diff = get_local_diff_ranges(repo_path)
+    head_diff = get_head_diff_ranges(repo_path, stash_id)
 
     conflicts_found = False
 

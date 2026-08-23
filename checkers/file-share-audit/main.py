@@ -225,7 +225,7 @@ class FileShareAuditor:
             return
         try:
             with Image.open(filepath) as img:
-                exif_data = img._getexif()  # type: ignore[attr-defined]
+                exif_data = img.getexif()
                 if exif_data:
                     for tag_id in exif_data:
                         tag_name = ExifTags.TAGS.get(tag_id, tag_id)

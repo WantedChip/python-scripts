@@ -158,7 +158,14 @@ def compute_diff(before: FileSnapshot, after: FileSnapshot) -> Tuple[str, int, s
     if not before.exists and after.exists:
         action = "CREATED"
         delta = after.size_bytes
-        diff = f"+++ File created ({after.size_bytes} bytes)"
+        diff_lines = difflib.unified_diff(
+            [],
+            after.content.splitlines(),
+            fromfile="/dev/null",
+            tofile=f"b/{Path(after.file_path).name}",
+            lineterm="",
+        )
+        diff = "\n".join(diff_lines)
     elif before.exists and not after.exists:
         action = "DELETED"
         delta = -before.size_bytes

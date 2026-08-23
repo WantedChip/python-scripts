@@ -195,7 +195,7 @@ def detect_and_parse_log(text: str, host: str = "localhost") -> HostTimeStatus:
         return parse_chrony_tracking(text, host=host)
     if (
         "ntpstat" in text.lower()
-        or "synchronised to NTP" in text.lower()
+        or "synchronised to ntp" in text.lower()
         or "unsynchronised" in text.lower()
     ):
         return parse_ntpstat(text, host=host)

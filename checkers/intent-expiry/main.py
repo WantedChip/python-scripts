@@ -155,12 +155,15 @@ class IntentAuditor:
             item.reason = "Comment text indicates item has been done/fixed."
             return
 
-        # Check symbol references
+        # Check symbol references; treat only code-style identifiers
+        # (snake_case / camelCase / PascalCase) as symbol mentions, not prose.
         stop_words = {"TODO", "FIXME", "HACK", "FOR", "AND", "THE", "USE"}
         symbols = [
             s
             for s in item.referenced_symbols
-            if len(s) > 2 and s.upper() not in stop_words
+            if len(s) > 2
+            and s.upper() not in stop_words
+            and ("_" in s or not s.islower())
         ]
         if symbols:
             found_count = sum(1 for s in symbols if s in self.all_symbols)

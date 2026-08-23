@@ -112,7 +112,9 @@ def validate_and_format_phone(
     """
     cleaned_phone, extension = extract_phone_components(raw_phone)
     if not cleaned_phone:
-        return "", "EMPTY", None
+        if not raw_phone or not raw_phone.strip():
+            return "", "EMPTY", None
+        return "", "INVALID", extension
 
     country_code = normalize_country_code(default_country_code)
 

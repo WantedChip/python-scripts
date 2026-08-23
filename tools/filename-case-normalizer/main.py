@@ -59,6 +59,7 @@ def resolve_collision(
     target_path: Path,
     existing_targets: Set[str],
     strategy: str = "append_number",
+    exclude: Optional[Path] = None,
 ) -> Optional[Path]:
     """Resolve potential file collision using the specified strategy.
 
@@ -66,9 +67,23 @@ def resolve_collision(
       - append_number: append _1, _2, etc. before extension
       - skip: return None to indicate skipping
       - overwrite: return target_path as is
+
+    Args:
+        target_path: Proposed destination path.
+        existing_targets: Destination paths already claimed in this run.
+        strategy: Collision handling strategy.
+        exclude: Source path to ignore during existence checks. Needed for
+            case-only renames on case-insensitive filesystems, where the
+            destination otherwise appears to be occupied by the source.
     """
+
+    def is_occupied(candidate: Path) -> bool:
+        if exclude is not None and str(candidate.resolve()) == str(exclude.resolve()):
+            return False
+        return candidate.exists()
+
     target_resolved = str(target_path.resolve())
-    if target_resolved not in existing_targets and not target_path.exists():
+    if target_resolved not in existing_targets and not is_occupied(target_path):
         return target_path
 
     if strategy == "overwrite":
@@ -85,7 +100,7 @@ def resolve_collision(
         while True:
             candidate = parent / f"{stem}_{counter}{ext}"
             cand_res = str(candidate.resolve())
-            if cand_res not in existing_targets and not candidate.exists():
+            if cand_res not in existing_targets and not is_occupied(candidate):
                 return candidate
             counter += 1
 
@@ -117,11 +132,11 @@ def process_directory(
         new_name = convert_filename(file_path.name, mode)
         proposed_target = file_path.parent / new_name
 
-        if proposed_target == file_path:
-            continue  # No change required
+        if new_name == file_path.name:
+            continue  # No change required (case-sensitive comparison)
 
         resolved_target = resolve_collision(
-            proposed_target, seen_targets, collision_strategy
+            proposed_target, seen_targets, collision_strategy, exclude=file_path
         )
         if resolved_target is None:
             continue  # Skipped due to collision strategy
@@ -132,9 +147,12 @@ def process_directory(
     if not dry_run:
         manifest_data = []
         for src, dst in renames:
+            # Capture before renaming: resolve() follows the live directory
+            # entry, so afterwards it would report dst's casing instead.
+            original_abs = str(src.resolve())
             src.rename(dst)
             item = {
-                "original": str(src.resolve()),
+                "original": original_abs,
                 "renamed": str(dst.resolve()),
             }
             manifest_data.append(item)

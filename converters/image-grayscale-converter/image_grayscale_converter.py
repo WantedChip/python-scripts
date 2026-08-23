@@ -56,12 +56,12 @@ def convert_to_grayscale(
             gray_img = img.convert("L")
 
             if contrast_factor != 1.0:
-                contrast_enhancer = ImageEnhance.Contrast(gray_img)  # type: ignore[no-untyped-call]
-                gray_img = contrast_enhancer.enhance(contrast_factor)  # type: ignore[no-untyped-call]
+                contrast_enhancer = ImageEnhance.Contrast(gray_img)
+                gray_img = contrast_enhancer.enhance(contrast_factor)
 
             if brightness_factor != 1.0:
-                bright_enhancer = ImageEnhance.Brightness(gray_img)  # type: ignore[no-untyped-call]
-                gray_img = bright_enhancer.enhance(brightness_factor)  # type: ignore[no-untyped-call]
+                bright_enhancer = ImageEnhance.Brightness(gray_img)
+                gray_img = bright_enhancer.enhance(brightness_factor)
 
             if sepia:
                 # Convert grayscale to sepia RGB tint
@@ -75,7 +75,7 @@ def convert_to_grayscale(
                     sb = int(r * 0.272 + g * 0.534 + b * 0.131)
                     sepia_pixels.append((min(255, sr), min(255, sg), min(255, sb)))
                 out_img: Image.Image = Image.new("RGB", gray_img.size)
-                out_img.putdata(sepia_pixels)  # type: ignore[no-untyped-call]
+                out_img.putdata(sepia_pixels)
             else:
                 out_img = gray_img
 

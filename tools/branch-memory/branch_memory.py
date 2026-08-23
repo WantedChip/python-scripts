@@ -76,7 +76,7 @@ def get_branches(path: str) -> List[Tuple[str, str]]:
             if "|" in line:
                 name, age = line.strip().split("|", 1)
                 branches.append((name, age))
-    except (OSError, ValueError):
+    except Exception:  # nosec B110 # pylint: disable=broad-exception-caught
         pass
     return branches
 

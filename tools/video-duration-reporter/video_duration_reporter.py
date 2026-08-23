@@ -72,8 +72,9 @@ def get_video_metadata_ffprobe(video_path: Path) -> Optional[Dict[str, Any]]:
     ]
 
     try:
-        # nosec B603
-        res = subprocess.run(
+        # Bandit flags subprocess with a list as B603; inputs are local file
+        # paths and the ffprobe binary resolved via shutil.which, no shell.
+        res = subprocess.run(  # nosec B603
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -90,8 +91,12 @@ def get_video_metadata_ffprobe(video_path: Path) -> Optional[Dict[str, Any]]:
         duration = float(format_info.get("duration", 0.0))
         size_bytes = int(format_info.get("size", video_path.stat().st_size))
 
-        video_stream = next((s for s in streams if s.get("codec_type") == "video"), {})
-        audio_stream = next((s for s in streams if s.get("codec_type") == "audio"), {})
+        video_stream: Dict[str, Any] = next(
+            (s for s in streams if s.get("codec_type") == "video"), {}
+        )
+        audio_stream: Dict[str, Any] = next(
+            (s for s in streams if s.get("codec_type") == "audio"), {}
+        )
 
         width = video_stream.get("width", 0)
         height = video_stream.get("height", 0)

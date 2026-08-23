@@ -74,19 +74,23 @@ def parse_iso_date(date_str: str) -> Optional[datetime.datetime]:
     if not date_str:
         return None
     clean_str = date_str.replace("Z", "+00:00")
-    for fmt in (
-        "%Y-%m-%dT%H:%M:%S%z",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M",
-        "%Y-%m-%d",
-        "%Y%m%dT%H%M%SZ",
-        "%Y%m%dT%H%M%S",
-        "%Y%m%d",
-    ):
-        try:
-            return datetime.datetime.strptime(clean_str[:19], fmt[:19])
-        except ValueError:
-            continue
+    # The raw string is tried first because replacing a trailing "Z" with
+    # "+00:00" breaks the compact basic-format templates below once the
+    # result is truncated to 19 characters (e.g. "20261001T100000Z").
+    for candidate in (date_str, clean_str):
+        for fmt in (
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%d",
+            "%Y%m%dT%H%M%SZ",
+            "%Y%m%dT%H%M%S",
+            "%Y%m%d",
+        ):
+            try:
+                return datetime.datetime.strptime(candidate[:19], fmt[:19])
+            except ValueError:
+                continue
     return None
 
 

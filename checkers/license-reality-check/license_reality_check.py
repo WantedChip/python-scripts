@@ -87,7 +87,7 @@ def query_pypi_license(pkg_name: str) -> Tuple[str, str]:
             if not lic or len(lic) > 100 or lic.lower() in ("osl Approved", "unknown"):
                 lic = license_classifier
             return lic, info.get("home_page", "")
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError):
+    except Exception:  # pylint: disable=broad-exception-caught
         return "Unknown", ""
 
 

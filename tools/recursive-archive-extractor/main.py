@@ -238,7 +238,12 @@ class RecursiveArchiveExtractor:
             archive_path.name,
             dest_sub_dir,
         )
-        success = self.extract_archive(archive_path, dest_sub_dir)
+        try:
+            success = self.extract_archive(archive_path, dest_sub_dir)
+        except ArchiveBombException as e:
+            logger.error("Archive bomb limit triggered: %s", e)
+            self.metrics.errors.append(str(e))
+            return self.metrics
 
         if not success:
             return self.metrics

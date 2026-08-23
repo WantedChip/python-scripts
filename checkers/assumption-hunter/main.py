@@ -247,6 +247,7 @@ class ASTAssumptionVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Constant(self, node: ast.Constant) -> None:
+        """Check string constants for hardcoded environment assumptions."""
         if isinstance(node.value, str):
             val = node.value
 

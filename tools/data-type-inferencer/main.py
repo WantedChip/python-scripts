@@ -186,8 +186,19 @@ def analyze_column(
         "string": 0,
     }
 
+    # Literals like "0"/"1" read as both boolean and numeric; only honor the
+    # boolean reading when every non-null value in the column reads boolean.
+    all_boolean = all(is_boolean(v) for v in non_null_values)
+
     for val in non_null_values:
         t = infer_single_value_type(val)
+        if t == "boolean" and not all_boolean:
+            if is_integer(val):
+                t = "integer"
+            elif is_float(val):
+                t = "float"
+            else:
+                t = "string"
         if t in type_counts:
             type_counts[t] += 1
         else:

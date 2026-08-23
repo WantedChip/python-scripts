@@ -46,11 +46,12 @@ class ScreenshotIndexer:
             db_path: Path to SQLite database file or ':memory:' for tests.
         """
         self.db_path = db_path
+        self.conn: sqlite3.Connection = sqlite3.connect(self.db_path)
         self.init_db()
 
     def get_connection(self) -> sqlite3.Connection:
-        """Helper to get a database connection."""
-        return sqlite3.connect(self.db_path)
+        """Helper to get the shared database connection."""
+        return self.conn
 
     def init_db(self) -> None:
         """Creates sqlite database schema if it doesn't already exist."""

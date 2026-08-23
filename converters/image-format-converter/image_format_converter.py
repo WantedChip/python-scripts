@@ -93,10 +93,12 @@ def convert_image_format(
             # Flatten alpha channel if converting RGBA to JPEG/BMP
             if fmt_lower in ("jpg", "jpeg", "bmp") and img.mode in ("RGBA", "LA", "P"):
                 background = Image.new("RGB", img.size, bg_color)
-                if img.mode == "P":
-                    img = img.convert("RGBA")
-                if img.mode in ("RGBA", "LA"):
-                    background.paste(img, mask=img.split()[-1])
+                # Palette mode must be expanded to RGBA before masking; bind
+                # the result to a new name instead of rebinding `img` (which
+                # Image.open typed as ImageFile — strict mypy rejects the
+                # incompatible reassignment).
+                alpha_source = img.convert("RGBA") if img.mode == "P" else img
+                background.paste(alpha_source, mask=alpha_source.split()[-1])
                 converted_img = background
             else:
                 converted_img = img

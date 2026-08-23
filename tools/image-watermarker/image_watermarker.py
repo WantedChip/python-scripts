@@ -12,10 +12,11 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 try:
     from PIL import Image, ImageDraw, ImageFont
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -99,10 +100,8 @@ def apply_watermark(
                     wm_rgba = wm.convert("RGBA")
                     # Adjust opacity of logo image
                     wm_channels = list(wm_rgba.split())
-                    wm_channels[3] = wm_channels[3].point(
-                        lambda p: int(p * opacity)
-                    )
-                    wm_rgba = Image.merge("RGBA", wm_channels)  # type: ignore[no-untyped-call]
+                    wm_channels[3] = wm_channels[3].point(lambda p: int(p * opacity))
+                    wm_rgba = Image.merge("RGBA", wm_channels)
 
                     if position == "tile":
                         for x in range(0, base_rgba.width, wm_rgba.width + margin):
@@ -117,14 +116,18 @@ def apply_watermark(
                         overlay.paste(wm_rgba, (x, y), wm_rgba)
             elif text:
                 draw = ImageDraw.Draw(overlay)
+                # load_default() returns a different font class than
+                # truetype() depending on the Pillow version, so widen the
+                # declared type to cover both.
+                font: Any
                 try:
-                    font = ImageFont.truetype("arial.ttf", font_size)  # type: ignore[no-untyped-call]
+                    font = ImageFont.truetype("arial.ttf", font_size)
                 except OSError:
                     font = ImageFont.load_default()
 
                 bbox = draw.textbbox((0, 0), text, font=font)
-                wm_w = bbox[2] - bbox[0]
-                wm_h = bbox[3] - bbox[1]
+                wm_w = int(bbox[2] - bbox[0])
+                wm_h = int(bbox[3] - bbox[1])
 
                 if position == "tile":
                     for x in range(0, base_rgba.width, wm_w + margin * 2):
@@ -139,9 +142,7 @@ def apply_watermark(
                     x, y = calculate_watermark_position(
                         base_rgba.size, (wm_w, wm_h), position, margin
                     )
-                    draw.text(
-                        (x, y), text, fill=(255, 255, 255, alpha_int), font=font
-                    )
+                    draw.text((x, y), text, fill=(255, 255, 255, alpha_int), font=font)
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
             watermarked = Image.alpha_composite(base_rgba, overlay)
@@ -261,9 +262,7 @@ def main(args: Optional[List[str]] = None) -> int:
         return 1
 
     wm_img_path = (
-        Path(parsed_args.watermark_image)
-        if parsed_args.watermark_image
-        else None
+        Path(parsed_args.watermark_image) if parsed_args.watermark_image else None
     )
 
     image_files: List[Path] = []
@@ -286,11 +285,7 @@ def main(args: Optional[List[str]] = None) -> int:
 
     success_cnt = 0
     for src in image_files:
-        rel = (
-            src.relative_to(input_path)
-            if input_path.is_dir()
-            else Path(src.name)
-        )
+        rel = src.relative_to(input_path) if input_path.is_dir() else Path(src.name)
         dst = out_dir / rel.parent / f"{rel.stem}_wm{rel.suffix}"
 
         ok = apply_watermark(

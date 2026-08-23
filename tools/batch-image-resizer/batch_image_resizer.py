@@ -5,7 +5,8 @@ scaling factors, maximum bounding constraints, and resampling filters.
 """
 
 # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-return-statements
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+# pylint: disable=too-many-return-statements
 
 import argparse
 import logging

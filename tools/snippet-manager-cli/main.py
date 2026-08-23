@@ -9,7 +9,8 @@ import argparse
 import sqlite3
 import subprocess  # nosec B404
 import sys
-from typing import Any, Dict, List, Optional
+from contextlib import contextmanager
+from typing import Any, Dict, Iterator, List, Optional
 
 # pylint: disable=too-many-branches,too-many-statements
 # pylint: disable=too-many-locals,too-many-arguments,too-many-positional-arguments
@@ -32,8 +33,15 @@ class SnippetManager:
         self.db_path = db_path
         self._init_db()
 
-    def _get_conn(self) -> sqlite3.Connection:
-        return sqlite3.connect(self.db_path)
+    @contextmanager
+    def _get_conn(self) -> Iterator[sqlite3.Connection]:
+        """Yield a connection that is committed and closed on exit."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            yield conn
+            conn.commit()
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
         with self._get_conn() as conn:

@@ -11,6 +11,7 @@ import json
 import re
 import sqlite3
 import sys
+from contextlib import closing
 from typing import Dict, List, Optional, Tuple
 
 # pylint: disable=too-many-branches,too-many-statements
@@ -30,7 +31,7 @@ SECRET_PATTERNS = [
     (r"AKIA[0-9A-Z]{16}", "[REDACTED_AWS_KEY]"),
     (r"Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*", "Bearer [REDACTED_TOKEN]"),
     (
-        r"-----BEGIN (?:RSA|OPENSSH|EC) PRIVATE KEY-----[\s\S]*?"
+        r"-----BEGIN (RSA|OPENSSH|EC) PRIVATE KEY-----[\s\S]*?"
         r"-----END \1 PRIVATE KEY-----",
         "[REDACTED_PRIVATE_KEY]",
     ),
@@ -82,7 +83,7 @@ class ClipboardManager:
         return sqlite3.connect(self.db_path)
 
     def _init_db(self) -> None:
-        with self._get_connection() as conn:
+        with closing(self._get_connection()) as conn:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS clipboard_history (
@@ -115,7 +116,7 @@ class ClipboardManager:
         content = self.redactor.redact(raw_text) if redact else raw_text
         preview = raw_text[:30] + ("..." if len(raw_text) > 30 else "")
 
-        with self._get_connection() as conn:
+        with closing(self._get_connection()) as conn:
             cursor = conn.cursor()
             # Check latest entry for deduplication
             q_select = "SELECT content FROM clipboard_history ORDER BY id DESC LIMIT 1"
@@ -141,7 +142,7 @@ class ClipboardManager:
         Returns:
             List of dictionaries representing clipboard entries.
         """
-        with self._get_connection() as conn:
+        with closing(self._get_connection()) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             q_list = (
@@ -161,7 +162,7 @@ class ClipboardManager:
         Returns:
             List of matching clipboard entries.
         """
-        with self._get_connection() as conn:
+        with closing(self._get_connection()) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             pattern = f"%{query}%"
@@ -197,7 +198,7 @@ class ClipboardManager:
 
     def clear_history(self) -> None:
         """Clear all stored clipboard history."""
-        with self._get_connection() as conn:
+        with closing(self._get_connection()) as conn:
             conn.execute("DELETE FROM clipboard_history")
             conn.commit()
 
