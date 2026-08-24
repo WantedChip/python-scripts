@@ -102,6 +102,16 @@ class TestNoteStoreEdgeCases(unittest.TestCase):
         self.store.create_note("Second", "b", ["home"])
         self.store.create_note("Third", "c", ["WORK"])
 
+        # Coarse clocks (Windows) can stamp same-tick creations with
+        # identical updated_at values, making the descending order a
+        # stable-sort coin flip. Force a strictly newer timestamp on the
+        # note that must sort first.
+        notes = self.store._load_notes()
+        for n in notes:
+            if n["title"] == "Third":
+                n["updated_at"] = "9999-12-31T23:59:59"
+        self.store._save_notes(notes)
+
         listed = self.store.list_notes(tag_filter="work")
         titles = [n["title"] for n in listed]
         # Both work notes returned, most recently updated (Third) first.

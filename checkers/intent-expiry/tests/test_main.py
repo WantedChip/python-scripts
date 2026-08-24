@@ -141,7 +141,12 @@ class TestGitBlame(unittest.TestCase):
         self.assertEqual(author, "Grace Hopper")
         self.assertEqual(date, "1700000000")
         self.assertEqual(commit, "9f2c1ab77e44aa01")
-        self.assertEqual(fake_run.call_args.kwargs["cwd"], str(self.repo_dir))
+        # Production resolves the cwd (8.3 aliases on Windows, /private/var
+        # on macOS), so compare canonical forms rather than raw strings.
+        self.assertEqual(
+            Path(fake_run.call_args.kwargs["cwd"]).resolve(),
+            self.repo_dir.resolve(),
+        )
 
     def test_blame_subprocess_error_returns_unknowns(self) -> None:
         """A failing git blame degrades to Unknown metadata."""

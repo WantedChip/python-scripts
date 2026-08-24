@@ -213,7 +213,7 @@ class TestKeyPress(unittest.TestCase):
         """A plain keystroke decodes to its lowercase character."""
         fake_msvcrt = mock.Mock()
         fake_msvcrt.getch.return_value = b"Q"
-        with mock.patch.object(main_module.os, "name", "nt"):
+        with mock.patch.object(main_module.sys, "platform", "win32"):
             with mock.patch.dict(sys.modules, {"msvcrt": fake_msvcrt}):
                 self.assertEqual(get_key_press(), "q")
 
@@ -221,7 +221,7 @@ class TestKeyPress(unittest.TestCase):
         """Arrow/special keys send a two-byte sequence; second byte wins."""
         fake_msvcrt = mock.Mock()
         fake_msvcrt.getch.side_effect = [b"\xe0", b"M"]
-        with mock.patch.object(main_module.os, "name", "nt"):
+        with mock.patch.object(main_module.sys, "platform", "win32"):
             with mock.patch.dict(sys.modules, {"msvcrt": fake_msvcrt}):
                 self.assertEqual(get_key_press(), "m")
 
@@ -233,7 +233,7 @@ class TestKeyPress(unittest.TestCase):
         fake_stdin.fileno.return_value = 0
         fake_stdin.read.return_value = "H"
         with mock.patch.dict(sys.modules, {"termios": fake_termios, "tty": fake_tty}):
-            with mock.patch.object(main_module.os, "name", "posix"):
+            with mock.patch.object(main_module.sys, "platform", "posix"):
                 with mock.patch.object(sys, "stdin", fake_stdin):
                     self.assertEqual(get_key_press(), "h")
                     fake_termios.tcsetattr.assert_called_once()
