@@ -10,6 +10,7 @@ collision prevention, dry-run preview mode, and undo manifest support.
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -78,8 +79,17 @@ def resolve_collision(
     """
 
     def is_occupied(candidate: Path) -> bool:
-        if exclude is not None and str(candidate.resolve()) == str(exclude.resolve()):
-            return False
+        if exclude is not None and candidate.exists():
+            # On case-insensitive filesystems (Windows, default macOS) the
+            # case-renamed destination matches the source's own directory
+            # entry, so a plain exists() check would flag every case-only
+            # rename as a collision. samefile() compares real entries and
+            # is portable across all three platforms.
+            try:
+                if os.path.samefile(candidate, exclude):
+                    return False
+            except OSError:
+                pass
         return candidate.exists()
 
     target_resolved = str(target_path.resolve())

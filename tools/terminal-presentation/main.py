@@ -343,7 +343,9 @@ def render_slide(
 
 def get_key_press() -> str:
     """Read a single keypress cross-platform."""
-    if os.name == "nt":
+    # sys.platform (not os.name) so type checkers narrow each backend to
+    # the platform that actually ships it.
+    if sys.platform == "win32":
         import msvcrt
 
         ch = msvcrt.getch()
@@ -355,14 +357,12 @@ def get_key_press() -> str:
         import tty
 
         fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)  # type: ignore[attr-defined]
+        old_settings = termios.tcgetattr(fd)
         try:
-            tty.setraw(sys.stdin.fileno())  # type: ignore[attr-defined]
+            tty.setraw(sys.stdin.fileno())
             ch_str: str = sys.stdin.read(1)
         finally:
-            termios.tcsetattr(  # type: ignore[attr-defined]
-                fd, termios.TCSADRAIN, old_settings  # type: ignore[attr-defined]
-            )
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch_str.lower()
 
 

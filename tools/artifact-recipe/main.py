@@ -50,6 +50,18 @@ def create_recipe(
     """Create provenance recipe dictionary for an artifact."""
     cwd_path = (cwd or Path.cwd()).resolve()
 
+    def safe_relpath(target: Path) -> str:
+        """Relative path from cwd, falling back to absolute across drives.
+
+        os.path.relpath raises ValueError when target and cwd sit on
+        different mount points (e.g. repo on D:, temp on C: on Windows
+        runners); an absolute path is the correct representation there.
+        """
+        try:
+            return os.path.relpath(target, cwd_path)
+        except ValueError:
+            return str(target)
+
     input_records = []
     for inp in input_paths:
         resolved = inp.resolve()
@@ -58,7 +70,7 @@ def create_recipe(
         input_records.append(
             {
                 "path": str(resolved),
-                "relative_path": os.path.relpath(resolved, cwd_path),
+                "relative_path": safe_relpath(resolved),
                 "sha256": compute_file_hash(resolved),
                 "mtime": m_val,
                 "size_bytes": s_val,
@@ -72,7 +84,7 @@ def create_recipe(
     recipe = {
         "artifact": {
             "path": str(art_res),
-            "relative_path": os.path.relpath(art_res, cwd_path),
+            "relative_path": safe_relpath(art_res),
             "sha256": compute_file_hash(art_res),
             "mtime": a_mtime,
             "size_bytes": a_size,

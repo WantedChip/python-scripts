@@ -15,13 +15,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Try importing winreg on Windows
-try:
-    import winreg
-
-    HAS_WINREG = True
-except ImportError:
-    HAS_WINREG = False
+# winreg is only available on Windows; the import lives inside
+# get_windows_programs() behind a sys.platform gate so type checkers
+# narrow it to the platform that actually ships it.
 
 
 def calculate_file_hash(file_path: Path) -> str:
@@ -110,8 +106,10 @@ def get_windows_programs() -> dict[str, str]:
         A dictionary mapping program name to version.
     """
     programs: dict[str, str] = {}
-    if not HAS_WINREG:
+    if sys.platform != "win32":
         return programs
+
+    import winreg  # pylint: disable=import-outside-toplevel
 
     keys = [
         (

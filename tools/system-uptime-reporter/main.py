@@ -43,7 +43,7 @@ def get_boot_timestamp() -> float:
                 return float(time.time() - uptime_seconds)
         except Exception:  # nosec B110
             pass
-    elif platform.system() == "Windows":
+    elif sys.platform == "win32":
         try:
             import ctypes
 

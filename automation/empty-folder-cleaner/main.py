@@ -87,8 +87,11 @@ def find_empty_folders(
     for current_root, dirs, files in os.walk(root_dir, topdown=False):
         current_path = Path(current_root)
 
-        # Do not clean root folder itself
-        if current_path == root_dir.resolve():
+        # Do not clean root folder itself. Compare canonical forms: on
+        # Windows/macOS the walk root keeps whatever alias the caller passed
+        # (8.3 short names, /var vs /private/var), so raw equality would
+        # miss and wrongly schedule the root for deletion.
+        if current_path.resolve() == root_dir.resolve():
             continue
 
         if is_folder_excluded(current_path, exclude_set):
