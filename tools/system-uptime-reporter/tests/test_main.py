@@ -92,15 +92,17 @@ class TestBootTimestamp(unittest.TestCase):
 
         with patch.object(uptime_module, "HAS_PSUTIL", False):
             with patch.object(uptime_module.platform, "system", return_value="Windows"):
-                with patch.dict(sys.modules, {"ctypes": fake_ctypes}):
-                    boot = get_boot_timestamp()
+                with patch.object(uptime_module.sys, "platform", "win32"):
+                    with patch.dict(sys.modules, {"ctypes": fake_ctypes}):
+                        boot = get_boot_timestamp()
         self.assertAlmostEqual(boot, time.time() - 90.0, delta=2.0)
 
     def test_unknown_platform_defaults_to_now(self) -> None:
         """Unsupported platforms fall back to the current time."""
         with patch.object(uptime_module, "HAS_PSUTIL", False):
             with patch.object(uptime_module.platform, "system", return_value="SunOS"):
-                boot = get_boot_timestamp()
+                with patch.object(uptime_module.sys, "platform", "linux"):
+                    boot = get_boot_timestamp()
         self.assertAlmostEqual(boot, time.time(), delta=2.0)
 
 
