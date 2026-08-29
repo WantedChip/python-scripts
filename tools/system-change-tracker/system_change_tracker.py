@@ -109,7 +109,7 @@ def get_windows_programs() -> dict[str, str]:
     if sys.platform != "win32":
         return programs
 
-    import winreg  # pylint: disable=import-outside-toplevel
+    import winreg  # pylint: disable=import-outside-toplevel,import-error
 
     keys = [
         (
